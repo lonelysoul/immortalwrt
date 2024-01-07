@@ -36,6 +36,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout
@@ -53,6 +55,7 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
+
 
     - name: Clone source code
       working-directory: /workdir

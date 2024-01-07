@@ -46,6 +46,13 @@ uci set v2raya.config.enabled='1'
 uci commit v2raya
 /etc/init.d/v2raya start
 http://openwrt.lan:2017
+
+This is correct, for OpenWrt 23.05.0 you have to run
+```
+
+```
+wget -O /usr/share/xray/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
+wget -O /usr/share/xray/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
 ```
 ## 5.v2raya大陆白名单
 ```bash

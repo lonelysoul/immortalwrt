@@ -1,0 +1,71 @@
+## 原版openwrt编译方法（x86）在ubuntu 20.04 ，Debian 10：
+## 0.安装依赖
+```bash
+sudo apt-get update
+sudo apt update
+sudo apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 python2.7 unzip zlib1g-dev lib32gcc-s1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf wget curl swig rsync build-essential ccache ecj fastjar file g++ gawk gettext git java-propose-classpath libelf-dev libncurses5-dev libncursesw5-dev libssl-dev python python2.7-dev python3 unzip wget python3-distutils python3-setuptools python3-dev rsync subversion swig time xsltproc zlib1g-dev
+sudo apt install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
+```
+## 1.首次编译
+```bash
+git clone https://github.com/openwrt/openwrt -b openwrt-23.05 openwrt
+cd openwrt
+echo 'src-git NueXini_Packages https://github.com/NueXini/NueXini_Packages.git' >>feeds.conf.default
+./scripts/feeds update -a
+./scripts/feeds install -a
+cp /usr/bin/upx staging_dir/host/bin
+cp /usr/bin/upx-ucl staging_dir/host/bin
+./scripts/feeds update -a
+./scripts/feeds install -a
+wget https://raw.githubusercontent.com/lonelysoul/openwrt-origin/main/.config [optional]
+make menuconfig 
+make -j8 download V=s
+make -j1 V=s
+```
+## 2.第二次及后续编译
+```bash
+cd openwrt
+git pull
+./scripts/feeds update -a && ./scripts/feeds install -a
+make menuconfig
+make -j8 download
+make -j$(($(nproc) + 1)) V=s
+```
+## 3.重新配置：
+```bash
+rm -rf ./tmp && rm -rf .config
+make menuconfig
+make -j8 download
+make -j$(($(nproc) + 1)) V=s
+```
+## 4.v2raya使用前配置
+```bash
+# For advanced usage, please see /etc/config/v2raya
+chmod +x /etc/init.d/v2raya
+uci set v2raya.config.enabled='1'
+uci commit v2raya
+/etc/init.d/v2raya start
+http://openwrt.lan:2017
+```
+## 5.v2raya大陆白名单
+```bash
+
+default: proxy
+# 国外域名即使有中国IP也要优先代理
+# 注意，LoyalsoldierSite.dat 文件需要预先通过 v2rayA 下载
+# 或者手动去它的仓库下载，然后保存为 LoyalsoldierSite.dat
+# 仓库地址：https://github.com/Loyalsoldier/v2ray-rules-dat
+# domain(ext:"LoyalsoldierSite.dat:geolocation-!cn")->proxy
+source(192.168.1.10) -> direct
+source(192.168.1.11) -> direct
+domain(geosite:apple)->direct
+domain(domain:hdfans.org, domain:hdtime.org,domain:msg.vg,domain:hdfans.org,domain:kp.m-team.cc,domain:m-team.cc,domain:nextdns.io)->direct
+domain(geosite:geolocation-!cn)->proxy
+# scholar sites
+domain(geosite:google-scholar)->proxy
+domain(geosite:category-scholar-!cn, geosite:category-scholar-cn)->direct
+domain(geosite:cn)->direct
+# ip(geoip:hk,geoip:mo)->proxy
+ip(geoip:private, geoip:cn)->direct
+
+```

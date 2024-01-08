@@ -21,11 +21,6 @@ git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
 # make menuconfig # choose LUCI -> Applications -> luci-app-mosdns
 # make package/mosdns/luci-app-mosdns/compile V=s
 
-
-mkdir -p package/luci-app-diskman && wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/applications/luci-app-diskman/Makefile -O package/luci-app-diskman/Makefile
-mkdir -p package/parted && wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/Parted.Makefile -O package/parted/Makefile
-
-
 # Uncomment a feed source
 #sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
 

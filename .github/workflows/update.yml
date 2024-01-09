@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # 修改为你的默认分支
+      
 
 jobs:
   check_update:

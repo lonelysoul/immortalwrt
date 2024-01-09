@@ -21,7 +21,7 @@ jobs:
     - name: Fetch upstream changes
       run: |
         git remote add upstream https://github.com/openwrt/openwrt.git
-        git fetch upstream
+        git fetch --depth 1 upstream
 
     - name: Check for changes and modify file if needed
       run: |

@@ -1,73 +1,39 @@
-# 更新检查工作流程
-# 该工作流用于检查指定 Git 仓库的更新并触发构建。
+name: Check for Updates
 
-name: UpdateMy
-
-# 环境变量：
-# - REPO_URL: 要检查更新的 Git 仓库的 URL。
-# - REPO_BRANCH: 要检查更新的 Git 仓库的分支。
-env:
-  REPO_URL: https://github.com/openwrt/openwrt
-  REPO_BRANCH: openwrt-23.05
-
-# 触发方式：
-# - 通过手动触发（workflow_dispatch）。
-# - 按照计划，每18小时触发一次（cron: '0 */18 * * *'）。
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: 0 */18 * * *
+  push:
+    branches:
+      - main  # 修改为你的默认分支
 
-# 工作：
 jobs:
-  check:
+  check_update:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-    # 获取提交哈希：
-    # - 克隆指定的 Git 仓库及分支。
-    # - 使用 `git rev-parse HEAD` 获取最新提交的哈希值。
-    # - 将提交哈希存储到名为 COMMIT_HASH 的环境变量中。
-    - name: Get Commit Hash
-      id: getHash
+    - name: Set up Git
       run: |
-        git clone --depth 1 $REPO_URL -b $REPO_BRANCH .
-        COMMIT_HASH=$(git rev-parse HEAD)
-        echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-
-    # 比较提交哈希：
-    # - 使用 `actions/cache` 动作缓存提交哈希。
-    # - 缓存键基于前一步获取的提交哈希。
-    - name: Compare Commit Hash
-      id: cacheHash
-      uses: actions/cache@v2
-      with:
-        path: .commitHash
-        key: HEAD-${{ env.COMMIT_HASH }}
-
-    # 保存新的提交哈希：
-    # - 如果缓存未命中（表示提交哈希发生变化），则将新的提交哈希保存到名为 .commitHash 的文件中。
-    - name: Save New Commit Hash
-      if: steps.cacheHash.outputs.cache-hit != 'true'
+        git config user.email "actions@github.com"
+        git config user.name "GitHub Actions"
+        
+    - name: Fetch upstream changes
       run: |
-        echo $COMMIT_HASH | tee .commitHash
+        git remote add upstream https://github.com/openwrt/openwrt.git
+        git fetch upstream
 
-    # 触发构建：
-    # - 如果缓存未命中，使用 `peter-evans/repository-dispatch` 触发构建。
-    # - 触发的事件类型为 "Source Code Update"。
-    - name: Trigger build
-      if: steps.cacheHash.outputs.cache-hit != 'true'
-      uses: peter-evans/repository-dispatch@v1
-      with:
-        token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
-        event-type: Source Code Update
-
-    # 删除工作流程运行记录：
-    # - 使用 `GitRML/delete-workflow-runs` 删除旧的工作流程运行记录。
-    # - 保留一天的工作流程运行记录，至少保留一次运行。
-    - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
-      with:
-        retain_days: 1
-        keep_minimum_runs: 1
+    - name: Check for changes and modify file if needed
+      run: |
+        CHANGES=$(git rev-list HEAD...upstream/main --count)
+        if [ "$CHANGES" -gt 0 ]; then
+          echo "There are changes in the upstream repository."
+          # 在这里添加修改本地文件的命令，例如修改一个文件的内容
+          # 例如，将文件中的某个字符串替换为指定内容
+          sed -i 's/old_content/new_content/' resault.txt
+          git add resault.txt
+          git commit -m "Update file due to upstream changes"
+          git push origin main  # 将修改推送回你的仓库
+        else
+          echo "No changes in the upstream repository."
+        fi

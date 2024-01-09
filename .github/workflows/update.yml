@@ -1,7 +1,7 @@
 # 更新检查工作流程
 # 该工作流用于检查指定 Git 仓库的更新并触发构建。
 
-name: Update Checker
+name: UpdateMy
 
 # 环境变量：
 # - REPO_URL: 要检查更新的 Git 仓库的 URL。

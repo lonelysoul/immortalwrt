@@ -12,7 +12,7 @@
 
 # 删除 golang 语言包
 rm -rf feeds/packages/lang/golang
-git clone https://github.com/sbwml/packages_lang_golang -b 20.x feeds/packages/lang/golang
+git clone https://github.com/sbwml/packages_lang_golang -b 21.x feeds/packages/lang/golang
 
 # 删除 feeds 中的 v2ray-geodata 包（适用于 openwrt-22.03 和 master）
 rm -rf feeds/packages/net/v2ray-geodata

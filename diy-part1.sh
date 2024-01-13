@@ -10,16 +10,6 @@
 # 描述: OpenWrt DIY 脚本第一部分（更新 feeds 之前）
 #
 
-# 删除 golang 语言包
-rm -rf feeds/packages/lang/golang
-git clone https://github.com/sbwml/packages_lang_golang -b 20.x feeds/packages/lang/golang
-
-# 删除 feeds 中的 v2ray-geodata 包（适用于 openwrt-22.03 和 master）
-rm -rf feeds/packages/net/v2ray-geodata
-
-# 克隆 mosdns 和 v2ray-geodata 仓库
-git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
-git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
 
 
 # 取消注释一个 feed 源

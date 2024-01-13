@@ -10,5 +10,17 @@
 # Description: OpenWrt DIY script part 2 (After Update feeds)
 #
 
+# 删除 golang 语言包
+rm -rf feeds/packages/lang/golang
+git clone https://github.com/sbwml/packages_lang_golang -b 20.x feeds/packages/lang/golang
+
+# 删除 feeds 中的 v2ray-geodata 包（适用于 openwrt-22.03 和 master）
+rm -rf feeds/packages/net/v2ray-geodata
+
+# 克隆 mosdns 和 v2ray-geodata 仓库
+git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
+git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
+
+
 # Modify default IP
 #sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate

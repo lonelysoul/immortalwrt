@@ -27,11 +27,5 @@ git clone https://github.com/coolsnowwolf/luci.git
 # 复制 luci-app-airplay2 文件夹到 feeds/luci/applications/
 cp -r luci/applications/luci-app-airplay2/ feeds/luci/applications/luci-app-airplay2/
 
-
-mkdir -p package/luci-app-diskman && wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/applications/luci-app-diskman/Makefile -O package/luci-app-diskman/Makefile
-mkdir -p package/parted && wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/Parted.Makefile -O package/parted/Makefile
-
-
-
 # Modify default IP
 #sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate

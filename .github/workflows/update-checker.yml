@@ -11,13 +11,13 @@
 
 name: Openwrt更新检查
 env:
-  REPO_URL: https://github.com/openwrt/openwrt
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: openwrt-23.05
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 */18 1 * *
+    - cron: 0 */18 * * *
 
 jobs:
   check:

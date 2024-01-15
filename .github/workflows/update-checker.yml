@@ -9,7 +9,7 @@
 # Description: Source code update checker
 #
 
-name: Openwrt更新检查
+name: Immortalwrt更新检查
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: openwrt-23.05

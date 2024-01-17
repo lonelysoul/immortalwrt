@@ -51,9 +51,9 @@ jobs:
         event-type: Immortalwrt源码更新触发release自动编译
         
     - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
+      uses: Mattraks/delete-workflow-runs@v2.0.6
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
         repository: ${{ github.repository }}
         retain_days: 1
-        keep_minimum_runs: 1
+        keep_minimum_runs: 3

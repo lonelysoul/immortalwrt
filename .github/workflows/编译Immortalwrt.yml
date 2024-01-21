@@ -1,11 +1,11 @@
 #
-# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
+# 版权所有（c）2019-2020 P3TERX <https://p3terx.com>
 #
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
+# 这是一款免费软件，根据 MIT 许可证授权。
+# 更多信息请查看 /LICENSE 文件。
 #
 # https://github.com/P3TERX/Actions-OpenWrt
-# Description: Build OpenWrt using GitHub Actions
+# 描述：使用 GitHub Actions 构建 OpenWrt
 #
 
 name: 编译Immortalwrt
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       ssh:
-        description: 'SSH connection to Actions'
+        description: '与Actions建立SSH连接'
         required: false
         default: 'false'
 
@@ -38,10 +38,10 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout
+    - name: 检出代码
       uses: actions/checkout@main
 
-    - name: Initialization environment
+    - name: 初始化环境
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -55,28 +55,27 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
 
-
-    - name: Clone source code
+    - name: 克隆源代码
       working-directory: /workdir
       run: |
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
-    - name: Load custom feeds
+    - name: 加载自定义feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
-    - name: Update feeds
+    - name: 更新feeds
       run: cd openwrt && ./scripts/feeds update -a
 
-    - name: Install feeds
+    - name: 安装feeds
       run: cd openwrt && ./scripts/feeds install -a
 
-    - name: Load custom configuration
+    - name: 加载自定义配置
       run: |
         [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
@@ -84,21 +83,20 @@ jobs:
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
-    - name: Update feeds2
+    - name: 更新feeds2
       run: cd openwrt && ./scripts/feeds update -a
 
-    - name: Install feeds2
+    - name: 安装feeds2
       run: cd openwrt && ./scripts/feeds install -a
 
-
-    - name: SSH connection to Actions
+    - name: 与Actions建立SSH连接
       uses: P3TERX/ssh2actions@v1.0.0
       if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
       env:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-    - name: Download package
+    - name: 下载软件包
       id: package
       run: |
         cd openwrt
@@ -107,29 +105,29 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Compile the firmware
+    - name: 编译固件
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
+        echo -e "$(nproc) 线程编译"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-    - name: Check space usage
+    - name: 检查空间使用情况
       if: (!cancelled())
       run: df -hT
 
-    - name: Upload bin directory
+    - name: 上传bin目录
       uses: actions/upload-artifact@main
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: openwrt/bin
 
-    - name: Organize files
+    - name: 整理文件
       id: organize
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
@@ -138,14 +136,14 @@ jobs:
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware directory
+    - name: 上传固件目录
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
-    - name: Generate release tag
+    - name: 生成发布标签
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
@@ -153,7 +151,7 @@ jobs:
         touch release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware to release
+    - name: 上传固件至发布
       uses: softprops/action-gh-release@v1
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
@@ -163,7 +161,7 @@ jobs:
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
 
-    - name: Delete workflow runs
+    - name: 删除工作流运行
       uses: Mattraks/delete-workflow-runs@v2.0.6
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
@@ -171,7 +169,7 @@ jobs:
         retain_days: 1
         keep_minimum_runs: 3
 
-    - name: Remove old Releases
+    - name: 删除旧的发布
       uses: dev-drprasad/delete-older-releases@v0.3.2
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       with:

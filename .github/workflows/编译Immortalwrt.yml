@@ -35,7 +35,8 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     permissions:
-      contents: write
+      actions: write
+      contents: read
 
     steps:
     - name: Checkout
@@ -164,9 +165,9 @@ jobs:
         files: ${{ env.FIRMWARE }}/*
 
     - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@v2.0.6
+      uses: Mattraks/delete-workflow-runs@v2
       with:
-        token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
+        token: ${{ github.token }}
         repository: ${{ github.repository }}
         retain_days: 1
         keep_minimum_runs: 3

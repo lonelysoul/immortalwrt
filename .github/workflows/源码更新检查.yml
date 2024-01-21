@@ -1,12 +1,12 @@
 #
-# Copyright (c) 2019-2021 P3TERX <https://p3terx.com>
+# 版权所有（c）2019-2021 P3TERX <https://p3terx.com>
 #
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
+# 这是一款免费软件，根据 MIT 许可证授权。
+# 更多信息请查看 /LICENSE 文件。
 #
 # https://github.com/P3TERX/Actions-OpenWrt
-# File: .github/workflows/update-checker.yml
-# Description: Source code update checker
+# 文件: .github/workflows/update-checker.yml
+# 描述: 源代码更新检查
 #
 
 name: Immortalwrt更新检查
@@ -15,7 +15,9 @@ env:
   REPO_BRANCH: master
 
 on:
+  # 手动触发工作流程
   workflow_dispatch:
+  # 定时触发，每18小时执行一次
   schedule:
     - cron: 0 */18 * * *
 
@@ -25,32 +27,34 @@ jobs:
 
     steps:
 
-    - name: Get Commit Hash
+    - name: 获取提交哈希值
       id: getHash
       run: |
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH .
         echo "commitHash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-#        echo "::set-output name=commitHash::$(git rev-parse HEAD)"
-    - name: Compare Commit Hash
+        # 如果需要输出到输出变量，可以使用下面的语句
+        # echo "::set-output name=commitHash::$(git rev-parse HEAD)"
+
+    - name: 比较提交哈希值
       id: cacheHash
       uses: actions/cache@v3
       with:
         path: .commitHash
         key: HEAD-${{ steps.getHash.outputs.commitHash }}
         
-    - name: Save New Commit Hash
+    - name: 保存新的提交哈希值
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
         echo ${{ steps.getHash.outputs.commitHash }} | tee .commitHash
 
-    - name: Trigger build
+    - name: 触发构建
       if: steps.cacheHash.outputs.cache-hit != 'true'
       uses: peter-evans/repository-dispatch@v2
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
         event-type: Immortalwrt源码更新触发release自动编译
         
-    - name: Delete workflow runs
+    - name: 删除工作流运行
       uses: Mattraks/delete-workflow-runs@v2.0.6
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}

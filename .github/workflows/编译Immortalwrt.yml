@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-20.04
     permissions:
       actions: write
-      contents: read
+      contents: write
 
     steps:
     - name: Checkout

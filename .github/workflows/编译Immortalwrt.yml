@@ -56,6 +56,16 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
 
+    - name: Check space usage
+      if: (!cancelled())
+      run: df -hT
+
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        df -hT
 
     - name: Clone source code
       working-directory: /workdir

@@ -24,5 +24,8 @@ cd "immortalwrt" && git pull && ./scripts/feeds update -a && ./scripts/feeds ins
 # 更新 OpenWrt 源码并下载组件
 cd "immortalwrt" && git pull && make -j8 download && make -j$(( $(nproc) + 1 )) || exit 1
 
+# 打印固件完成时间
+echo $(date)
+
 # 打印固件编译完成的消息
 echo "固件编译完成"

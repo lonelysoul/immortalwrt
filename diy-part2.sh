@@ -18,7 +18,7 @@
 # rm -rf feeds/packages/net/v2ray-geodata
 
 # 克隆 mosdns 和 v2ray-geodata 仓库
-git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
+# git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
 # git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
 
 # 克隆 coolsnowwolf/luci 仓库

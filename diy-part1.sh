@@ -13,8 +13,8 @@
 
 
 # 取消注释一个 feed 源
-# sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+sed -i "/helloworld/d" "feeds.conf.default"
 
 # 添加一个 feed 源
-# echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
+echo "src-git helloworld https://github.com/fw876/helloworld.git" >> "feeds.conf.default"
 # echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default

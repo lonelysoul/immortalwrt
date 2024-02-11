@@ -9,9 +9,9 @@
 # Description: Source code update checker
 #
 
-name: Immortalwrt更新检查
+name: lede更新检查
 env:
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
 
 on:

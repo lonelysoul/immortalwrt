@@ -9,7 +9,7 @@
 # Description: Source code update checker
 #
 
-name: lede更新检查
+name: Check
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
@@ -51,7 +51,7 @@ jobs:
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
-        event-type: 源码更新触发编译
+        event-type: Auto Build
         
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@v2

@@ -64,10 +64,6 @@ jobs:
         sudo apt clean
         df -hT
 
-    - name: Cleanup Log File
-      run: |
-        rm -rf /home/runner/runners/*
-
     - name: free disk space
       run: |
         sudo swapoff -a

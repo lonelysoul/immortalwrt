@@ -54,8 +54,6 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
-        sudo mount /dev/sdb1 /workdir
-        sudo chown $USER:$GROUPS /workdir
 
     - name: free disk space2
       run: |

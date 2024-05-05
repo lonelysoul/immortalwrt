@@ -29,3 +29,26 @@ echo $(date)
 
 # 打印固件编译完成的消息
 echo "固件编译完成"
+
+
+======
+#!/bin/bash
+cd
+cd immortalwrt
+echo $(git rev-parse HEAD) > ./ot.txt
+file1=./ot.txt file2=./otold.txt
+sort $file1
+sort $file2
+diff $file1 $file2 > /dev/null
+if [ $? == 0 ]; then
+echo "same"
+else
+echo "diferent"
+cd
+cd "immortalwrt" && git pull && ./scripts/feeds update -a && ./scripts/feeds install -a && cd - || exit 1
+cd "immortalwrt" && git pull && make -j8 download && make -j3 || exit 1
+echo $(date)
+echo "固件编译完成"
+fi
+mv ./ot.txt otold.txt
+

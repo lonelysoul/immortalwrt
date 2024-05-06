@@ -1,0 +1,72 @@
+global {
+    tproxy_port: 12345
+    tproxy_port_protect: true
+    so_mark_from_dae: 0
+    log_level: info
+    disable_waiting_network: false
+    lan_interface: eth0
+    wan_interface: pppoe-wan
+    auto_config_kernel_parameter: true
+    auto_config_firewall_rule: true
+    tcp_check_url: 'http://cp.cloudflare.com,1.1.1.1,2606:4700:4700::1111'
+    tcp_check_http_method: HEAD
+    udp_check_dns: 'dns.google.com:53,8.8.8.8,2001:4860:4860::8888'
+    check_interval: 30s
+    check_tolerance: 50ms
+    dial_mode: domain
+    allow_insecure: false
+    sniffing_timeout: 100ms
+    tls_implementation: tls
+    utls_imitate: chrome_auto
+}
+
+subscription {
+}
+
+node {
+forsingbox: 'socks5://localhost:1080'
+}
+
+dns {
+    upstream {
+        alidns: 'udp://dns.alidns.com:53'
+        googledns: 'tcp+udp://dns.google.com:53'
+    }
+    routing {
+        request {
+            qname(suffix: api.miwifi.com) -> reject
+            qname(geosite:category-ads-all) -> reject
+            qname(geosite:cn) -> alidns
+            qname(geosite:microsoft@cn) -> alidns
+            fallback: googledns
+        }
+    }
+}
+
+group {
+    proxy {
+        policy: min_moving_avg
+    }
+        }
+
+routing {
+    pname(NetworkManager, systemd-resolved, dnsmasq) -> direct
+    pname(sing-box) -> direct(must)
+    sip(192.168.1.10) -> direct
+    sport(21123) -> direct
+    domain(full: hdtime.org,tracker.hdtime.org,hdfans.org,m-team.cc,xp.m-team.io,kp.m-team.,xp.m-team.cc,ap.m-team.cc,tra1.m-team.io,taobao.com,alipay.com,myip.ipip.net,ddns.oray.com,ip.3322.net,4.ipw.cn,rousi.zip) -> direct
+    dip(geoip:private) -> direct
+    dip(224.0.0.0/3, 'ff00::/8') -> direct
+    dip(geoip:private) -> direct
+    !dport(22, 53, 80, 143, 443, 465, 853, 993, 995, 8080, 8443, 9418) -> direct
+    dscp(0x4) -> direct
+    domain(suffix:meta.com) -> proxy
+    domain(full: github.com,raw.githubusercontent.com,cloudflare.com,dash.cloudflare.com,immortalwrt.org,git.openwrt.org,openwrt.org) -> proxy 
+    l4proto(udp) && dport(443) -> block
+    dip(geoip:cn) -> direct
+    domain(geosite:cn) -> direct
+    domain(geosite:microsoft@cn) -> direct
+
+    fallback: proxy
+}
+

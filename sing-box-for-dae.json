@@ -1,0 +1,37 @@
+{
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen": "::",
+      "listen_port": 1080,
+      "tcp_fast_open": true,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "sniff": false,
+      "sniff_override_destination": false,
+      "sniff_timeout": "300ms",
+      "udp_timeout": 300
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "proxy",
+      "server": "a.com",
+      "server_port": 55555,
+      "up_mbps": 50,
+      "down_mbps": 1000,
+      "password": "password",
+      "tls": {
+        "enabled": true,
+        "server_name": "a.com"
+      },
+      "brutal_debug": false
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "final": "proxy"
+  }
+}

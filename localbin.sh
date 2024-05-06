@@ -31,24 +31,26 @@ echo $(date)
 echo "固件编译完成"
 
 
-======
-#!/bin/bash
+======#!/bin/bash
 cd
 cd immortalwrt
+git pull
 echo $(git rev-parse HEAD) > ./ot.txt
 file1=./ot.txt file2=./otold.txt
 sort $file1
 sort $file2
+echo ""
 diff $file1 $file2 > /dev/null
 if [ $? == 0 ]; then
-echo "same"
+echo "The source code is the latest"
+echo "No need to recompile"
 else
-echo "diferent"
+echo "The source code has been updated and recompilation begins."
 cd
 cd "immortalwrt" && git pull && ./scripts/feeds update -a && ./scripts/feeds install -a && cd - || exit 1
 cd "immortalwrt" && git pull && make -j8 download && make -j3 || exit 1
 echo $(date)
-echo "固件编译完成"
+echo "Compilation completed"
 fi
 mv ./ot.txt otold.txt
 

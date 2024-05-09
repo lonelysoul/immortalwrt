@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# 判断是否传入了 -c 参数
+FORCE_COMPILE=false
+while getopts ":c" opt; do
+  case ${opt} in
+    c )
+      FORCE_COMPILE=true
+      ;;
+    \? )
+      echo "Invalid option: $OPTARG" 1>&2
+      ;;
+  esac
+done
+
 # 进入工作目录
 cd ~/immortalwrt || { echo "Failed to change directory to immortalwrt"; exit 1; }
 
@@ -8,9 +21,13 @@ git fetch origin
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse @{u})
 
-# 检查本地和远程代码是否一致
-if [ "$LOCAL" != "$REMOTE" ]; then
-    echo "Source code has been updated. Recompilation starts."
+# 检查本地和远程代码是否一致或是否强制编译
+if [ "$LOCAL" != "$REMOTE" ] || [ "$FORCE_COMPILE" = true ]; then
+    if [ "$FORCE_COMPILE" = true ]; then
+        echo "Force compilation option detected. Recompilation starts even if the source code is up-to-date."
+    else
+        echo "Source code has been updated. Recompilation starts."
+    fi
     # 开始计时
     start=$(date +%s)
     # 拉取最新代码并重新编译
@@ -42,5 +59,5 @@ if [ "$LOCAL" != "$REMOTE" ]; then
     echo "$(date): Compilation completed"
 else
     # 本地代码是最新的，无需重新编译
-    echo "Source code is up to date. No need to recompile."
+    echo "Source code is up-to-date. No need to recompile."
 fi

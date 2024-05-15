@@ -60,3 +60,10 @@ jobs:
         repository: ${{ github.repository }}
         retain_days: 1
         keep_minimum_runs: 3
+        
+    - name: Notify Telegram
+      run: |
+        curl -X POST \
+          https://api.telegram.org/bot${{ secrets.AAHPGVXmCkWUprzy1dHsyjVGPyxHMkIlroM }}/sendMessage \
+          -d chat_id=${{ secrets.7058381888 }} \
+          -d text="GitHub Action完成了！"

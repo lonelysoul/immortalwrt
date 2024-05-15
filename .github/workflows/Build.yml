@@ -179,3 +179,10 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Notify Telegram
+      run: |
+        curl -X POST \
+          https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="Immortalwrt基于今日最新代码已经编译完成了！下载地址：https://github.com/lonelysoul/immortalwrt/releases"

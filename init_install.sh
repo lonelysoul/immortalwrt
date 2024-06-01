@@ -20,3 +20,6 @@ wget https://raw.githubusercontent.com/lonelysoul/immortalwrt/main/.config
 
 # Completing the configuration using defconfig
 make defconfig
+
+# back to main
+cd

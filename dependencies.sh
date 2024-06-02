@@ -16,3 +16,5 @@ dependencies=(
 # 更新软件包列表并安装依赖项
 sudo apt update -y
 sudo apt install -y "${dependencies[@]}"
+
+

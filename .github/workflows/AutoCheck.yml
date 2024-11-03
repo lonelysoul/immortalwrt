@@ -1,3 +1,14 @@
+#
+# Copyright (c) 2019-2021 P3TERX <https://p3terx.com>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+# https://github.com/P3TERX/Actions-OpenWrt
+# File: .github/workflows/update-checker.yml
+# Description: Source code update checker
+#
+
 name: AutoCheck
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
@@ -12,9 +23,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: write
 
     steps:
+
     - name: Get Commit Hash
       id: getHash
       run: |
@@ -47,3 +60,4 @@ jobs:
         repository: ${{ github.repository }}
         retain_days: 1
         keep_minimum_runs: 3
+        

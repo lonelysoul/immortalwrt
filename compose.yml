@@ -17,5 +17,5 @@ services:
         apt install -y wget &&
         wget -O setup.sh https://raw.githubusercontent.com/lonelysoul/immortalwrt/refs/heads/main/docker_setup.sh &&
         chmod +x setup.sh &&
-        ./setup.sh &&
+        ./setup.sh 
       "

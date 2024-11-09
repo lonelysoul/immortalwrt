@@ -33,8 +33,7 @@ xxd zlib1g-dev zstd
 curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install
 
 # 启动 Alist 并设置管理员密码
-/opt/alist/alist start
-/opt/alist/alist admin set admin
+cd /opt/alist/ && ./alist start && ./alist admin set admin
 
 # 启动 SSH 守护进程
 /usr/sbin/sshd -D

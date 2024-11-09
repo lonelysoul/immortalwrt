@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e  # 遇到错误时停止执行
 
+# 设置时区为 Asia/Shanghai
+export TZ="Asia/Shanghai"
+
 echo 'apparmor apparmor/enable boolean false' | debconf-set-selections
 export DEBIAN_FRONTEND=noninteractive
 

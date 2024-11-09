@@ -11,7 +11,7 @@ apt update && apt install -y openssh-server sudo
 mkdir -p /run/sshd
 
 # 设置 root 用户密码
-echo 'root:NIhao123' | chpasswd
+echo 'root:root' | chpasswd
 
 # 创建用户 wrt，设置密码并添加到 sudo 组
 useradd -m wrt && echo 'wrt:wrt' | chpasswd

@@ -39,4 +39,7 @@ useradd -m wrt && echo 'wrt:wrt' | chpasswd
 usermod -aG sudo wrt
 
 # 启动 SSH 守护进程
-/usr/sbin/sshd -D
+/usr/sbin/sshd -D &
+
+# 输出文件执行完毕的提示
+echo "文件执行完毕"

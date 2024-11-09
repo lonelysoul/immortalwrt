@@ -31,9 +31,9 @@ curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install
 # 启动 Alist 并设置管理员密码
 cd /opt/alist/ && ./alist start && ./alist admin set admin
 
-# 启动 SSH 守护进程
-/usr/sbin/sshd -D
-
 # 创建用户 wrt，设置密码并添加到 sudo 组
 useradd -m wrt && echo 'wrt:wrt' | chpasswd
 usermod -aG sudo wrt
+
+# 启动 SSH 守护进程
+/usr/sbin/sshd -D

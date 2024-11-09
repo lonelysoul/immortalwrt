@@ -23,7 +23,7 @@ libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs \
 msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip \
 python3-ply python3-docutils python3-pyelftools qemu-utils re2c rsync scons \
 squashfs-tools subversion swig texinfo uglifyjs unzip vim wget xmlto \
-xxd zlib1g-dev zstd
+xxd zlib1g-dev zstd cron
 
 # 下载并安装 Alist
 curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install

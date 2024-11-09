@@ -1,7 +1,7 @@
 services:
   debian:
     image: debian
-    container_name: my-debian
+    container_name: debian
     tty: true
     stdin_open: true
 

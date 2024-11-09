@@ -13,10 +13,6 @@ mkdir -p /run/sshd
 # 设置 root 用户密码
 echo 'root:root' | chpasswd
 
-# 创建用户 wrt，设置密码并添加到 sudo 组
-useradd -m wrt && echo 'wrt:wrt' | chpasswd
-usermod -aG sudo wrt
-
 # 安装开发和编译相关的工具
 apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison \
 build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler ecj \
@@ -37,3 +33,7 @@ cd /opt/alist/ && ./alist start && ./alist admin set admin
 
 # 启动 SSH 守护进程
 /usr/sbin/sshd -D
+
+# 创建用户 wrt，设置密码并添加到 sudo 组
+useradd -m wrt && echo 'wrt:wrt' | chpasswd
+usermod -aG sudo wrt

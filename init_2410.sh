@@ -5,6 +5,7 @@ REPO_URL="https://github.com/immortalwrt/immortalwrt"
 BRANCH="openwrt-24.10"
 CONFIG_URL="https://raw.githubusercontent.com/lonelysoul/immortalwrt/main/.config"
 SRC_DIR="immortalwrt"
+CONFIG_FILE="2410.config"
 
 # 保存当前目录
 ORIGINAL_DIR=$(pwd)
@@ -17,7 +18,7 @@ DEPENDENCIES=(
   lib32gcc-s1 libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev
   libmpc-dev libmpfr-dev libncurses5-dev libncursesw5 libncursesw5-dev libpython3-dev
   libreadline-dev libssl-dev libtool lld llvm lrzsz mkisofs msmtp nano ninja-build
-  p7zip p7zip-full patch pkgconf  python3 python3-pip python3-ply
+  p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply
   python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools
   subversion swig texinfo uglifyjs unzip vim wget xmlto xxd zlib1g-dev
 )
@@ -54,11 +55,11 @@ update_and_install_feeds() {
 
 # 下载并覆盖配置文件
 download_config() {
-  if [ -f ".config" ]; then
-    echo ".config 文件已存在，将被覆盖。"
+  if [ -f "$CONFIG_FILE" ]; then
+    echo "$CONFIG_FILE 文件已存在，将被覆盖。"
   fi
-  wget -O .config $CONFIG_URL
-  check_command_success "wget .config"
+  wget -O "$CONFIG_FILE" $CONFIG_URL
+  check_command_success "wget $CONFIG_FILE"
 }
 
 # 主要执行步骤

@@ -8,17 +8,13 @@ echo 'apparmor apparmor/enable boolean false' | debconf-set-selections
 export DEBIAN_FRONTEND=noninteractive
 
 # 更新软件包索引并安装 openssh-server 和 sudo
-apt update && apt install -y openssh-server sudo
+apt update && apt install -y openssh-server sudo unzip vim wget curl
 
 # 创建 SSH 守护进程所需的目录
 mkdir -p /run/sshd
 
 # 设置 root 用户密码
 echo 'root:root' | chpasswd
-
-# 安装开发和编译相关的工具
-apt install -y   unzip vim wget curl
-
 
 # 下载并安装 Alist
 curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install

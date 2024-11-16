@@ -16,6 +16,9 @@ mkdir -p /run/sshd
 # 设置 root 用户密码
 echo 'root:root' | chpasswd
 
+# 安装开发和编译相关的工具
+apt install -y   unzip vim wget 
+
 
 # 下载并安装 Alist
 curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install

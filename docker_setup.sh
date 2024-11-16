@@ -17,7 +17,7 @@ mkdir -p /run/sshd
 echo 'root:root' | chpasswd
 
 # 安装开发和编译相关的工具
-apt install -y   unzip vim wget 
+apt install -y   unzip vim wget curl
 
 
 # 下载并安装 Alist

@@ -71,10 +71,6 @@ main() {
   update_and_install_feeds
   
   download_config
-
-  # 补全配置
-  make defconfig
-  check_command_success "make defconfig"
 }
 
 main

@@ -1,5 +1,5 @@
 
-# OpenWRT 编译配置指南
+# OpenWRT DAED 编译配置准备
 
 本文档介绍如何通过 `menuconfig` 配置 OpenWRT，以启用内核调试功能、BPF 支持和 `daed` 功能模块。
 

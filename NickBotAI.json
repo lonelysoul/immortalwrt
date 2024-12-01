@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "domain_suffix": [
+        "copilot.microsoft.com",
+        "gateway-copilot.bingviz.microsoftapp.net",
+        "mobile.events.data.microsoft.com",
+        "graph.microsoft.com",
+        "analytics.adjust.com",
+        "analytics.adjust.net.in",
+        "api.revenuecat.com",
+        "t-msedge.net",
+        "cloudapp.azure.com",
+        "browser-intake-datadoghq.com",
+        "in.appcenter.ms",
+        "guzzoni.apple.com",
+        "smoot.apple.com",
+        "apple-relay.cloudflare.com",
+        "apple-relay.fastly-edge.com",
+        "cp4.cloudflare.com",
+        "apple-relay.apple.com"
+      ]
+    }
+  ]
+}

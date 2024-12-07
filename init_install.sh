@@ -23,7 +23,8 @@ DEPENDENCIES=(
 
 
 # 更新包列表并安装依赖
-sudo apt update && sudo apt install -y "${DEPENDENCIES[@]}"
+# sudo apt update && sudo apt install -y "${DEPENDENCIES[@]}"
+sudo DEBIAN_FRONTEND=noninteractive apt update && sudo DEBIAN_FRONTEND=noninteractive apt install -y "${DEPENDENCIES[@]}"
 
 # 检查命令是否成功执行
 check_command_success() {

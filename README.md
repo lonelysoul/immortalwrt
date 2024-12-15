@@ -1,4 +1,3 @@
-
 # ImmortalWrt 固件自动化编译
 
 本项目通过自动化流程实现 **[ImmortalWrt](https://github.com/immortalwrt/immortalwrt)** 固件的每日编译。固件包含多种实用插件，采用默认的分区配置，适合多种场景下的用户需求。
@@ -12,53 +11,46 @@
 
 固件集成了以下插件，提供了丰富的功能支持，满足家庭、办公及轻量级服务器需求：
 
-- **基础功能**：
-  - `luci`：Web 管理界面
-  - `ttyd`：Web 终端
-  - `statistics`：流量统计
-  - `upnp`：通用即插即用支持
-  - `ddns-go`：动态域名解析服务
-- **文件管理与共享**：
-  - `diskman`：磁盘管理工具
-  - `filebrowser-go`：文件管理器
-  - `samba`：文件共享服务
-- **网络增强**：
-  - `homeproxy`：轻量级代理服务
-  - `hysteria2`：高性能代理工具
-  - `airplay2`：音频投屏支持
-  - `arpbind`：ARP 绑定工具
-- **USB 支持**：
-  - `usb-audio`：USB 声卡支持
-- **其他实用工具**：
-  - `openssh-sftp-server`：SFTP 服务
-  - `ip-full`：增强 IP 工具集
+### **基础功能**
+- `luci`：Web 管理界面
+- `ttyd`：Web 终端
+- `statistics`：流量统计
+- `upnp`：通用即插即用支持
+- `ddns-go`：动态域名解析服务
+
+### **文件管理与共享**
+- `diskman`：磁盘管理工具
+- `filebrowser-go`：文件管理器
+- `samba`：文件共享服务
+
+### **网络增强**
+- `homeproxy`：轻量级代理服务
+- `hysteria2`：高性能代理工具
+- `airplay2`：音频投屏支持
+- `arpbind`：ARP 绑定工具
+- `luci-dapp-daed`：基于 **eBPF** 的 Linux 高性能透明代理解决方案
+
+### **USB 支持**
+- `usb-audio`：USB 声卡支持
+
+### **增强代理与防火墙**
+- `luci-app-openclash`：强大的 Clash 图形化管理界面，支持多种代理协议（如 Vmess、Trojan、SSR 等）
+
+### **其他实用工具**
+- `openssh-sftp-server`：SFTP 服务
+- `ip-full`：增强 IP 工具集
+
+---
 
 ## 分区配置
 
 固件采用 **上游代码的默认分区配置**，无需额外调整即可适配大多数设备：
 
-- **Kernel Partition**：32M
+- **Kernel Partition**：32M  
 - **Root Filesystem Partition**：160M
 
+---
 
-## 适用用户
-
-本固件适用于以下场景和用户：
-
-1. **家庭用户**：
-   - 希望通过 Web 管理界面 (LuCI) 简化设备管理。
-   - 需要使用 Samba、FileBrowser 共享和管理家庭文件。
-   - 需要通过 DDNS 访问家庭设备，或者使用 Airplay2 播放音频。
-
-2. **小型办公室**：
-   - 提供网络打印、文件共享服务。
-   - 使用轻量级代理服务 (HomeProxy) 提升网络效率。
-   - 实现流量统计和动态 IP 管理功能。
-
-3. **开发者和高级用户**：
-   - 希望使用 Web 终端 (TTYD) 提高管理效率。
-   - 需要丰富的网络工具，如 UPnP 和 Hysteria2。
-   - 使用 DiskMan 管理磁盘分区。
 
 ## 使用说明
 
@@ -67,6 +59,8 @@
    - 确保设备硬件支持 ImmortalWrt 固件。
    - 按设备型号对应的刷写方式进行安装。
 3. **定制需求**：如需添加插件或修改分区设置，可自行克隆仓库并参考官方文档调整配置。
+
+---
 
 ## 注意事项
 
@@ -77,3 +71,6 @@
 ---
 
 感谢使用本固件项目！如果有任何问题或建议，欢迎提交至 [Issues](./issues) 页面，我们将及时为您解答。
+
+
+

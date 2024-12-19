@@ -51,6 +51,11 @@ if [ "$LOCAL" != "$REMOTE" ] || [ "$FORCE_COMPILE" = true ]; then
         echo "下载软件包失败。"
         exit 1
     fi
+        # 新增：运行 make defconfig
+    if ! make defconfig; then
+        echo "执行 make defconfig 失败。"
+        exit 1
+    fi
     if ! make -j${NPROC:-$(nproc --ignore=1)}; then
         echo "编译失败。"
         exit 1

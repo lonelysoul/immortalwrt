@@ -1,4 +1,4 @@
-```markdown
+
 # ImmortalWrt 固件自动化编译
 
 本项目通过自动化流程实现 ImmortalWrt 固件的每日编译。固件包含多种实用插件，采用默认的分区配置，适合多种场景下的用户需求。
@@ -71,4 +71,3 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lonelysoul/immortalwrt/r
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)。
-```

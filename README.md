@@ -21,9 +21,6 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lonelysoul/immortalwrt/r
 固件集成了以下插件，提供了丰富的功能支持，满足家庭、办公及轻量级服务器需求：
 
 ### 基础功能
-- `luci`：Web 管理界面
-- `ttyd`：Web 终端
-- `statistics`：流量统计
 - `upnp`：通用即插即用支持
 - `ddns-go`：动态域名解析服务
 
@@ -33,11 +30,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lonelysoul/immortalwrt/r
 - `samba`：文件共享服务
 
 ### 网络增强
-- `homeproxy`：轻量级代理服务
 - `hysteria2`：高性能代理工具
 - `airplay2`：音频投屏支持
 - `arpbind`：ARP 绑定工具
-- `luci-dapp-daed`：基于 eBPF 的 Linux 高性能透明代理解决方案
+- `luci-dapp-dae`：基于 eBPF 的 Linux 高性能透明代理解决方案
 
 ### USB 支持
 - `usb-audio`：USB 声卡支持
@@ -47,7 +43,6 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lonelysoul/immortalwrt/r
 
 ### 其他实用工具
 - `openssh-sftp-server`：SFTP 服务
-- `ip-full`：增强 IP 工具集
 
 ## 分区配置
 
@@ -68,6 +63,3 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lonelysoul/immortalwrt/r
 
 如果您有任何问题或建议，欢迎提交 Issue 或 Pull Request。您的支持是我们持续改进的动力！
 
-## 许可证
-
-本项目采用 [MIT License](LICENSE)。

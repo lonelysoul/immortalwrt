@@ -63,7 +63,7 @@ jobs:
         [ $(df -h /mnt/workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "Insufficient disk space"; exit 1; }
 
     - name: Cache downloaded packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: openwrt/dl
         key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('openwrt/.config') }}

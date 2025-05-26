@@ -1,19 +1,19 @@
-name: release
+name: 包含dae的固件
 
 on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:
-        description: 'SSH connection to Actions'
+        description: 'SSH连接到Actions'
         required: false
         default: 'false'
       repo_url:
-        description: 'Repository URL'
+        description: '仓库URL'
         required: false
         default: 'https://github.com/immortalwrt/immortalwrt'
       repo_branch:
-        description: 'Repository branch'
+        description: '仓库分支'
         required: false
         default: 'master'
 
@@ -37,10 +37,10 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout
+    - name: 检出代码
       uses: actions/checkout@v4
 
-    - name: Initialization environment
+    - name: 初始化环境
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -53,16 +53,16 @@ jobs:
         sudo mkdir -p /mnt/workdir
         sudo chown $USER:$GROUPS /mnt/workdir
 
-    - name: Verify working directory permissions
+    - name: 验证工作目录权限
       run: |
-        [ -w /mnt/workdir ] || { echo "Permission denied for /mnt/workdir"; exit 1; }
+        [ -w /mnt/workdir ] || { echo "工作目录/mnt/workdir权限不足"; exit 1; }
 
-    - name: Check disk space before cloning
+    - name: 克隆前检查磁盘空间
       run: |
         df -hT
-        [ $(df -h /mnt/workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "Insufficient disk space"; exit 1; }
+        [ $(df -h /mnt/workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "磁盘空间不足"; exit 1; }
 
-    - name: Cache downloaded packages
+    - name: 缓存下载的软件包
       uses: actions/cache@v4
       with:
         path: openwrt/dl
@@ -70,14 +70,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-openwrt-dl-
 
-    - name: Clone source code
+    - name: 克隆源代码
       working-directory: /mnt/workdir
       run: |
         df -hT $PWD
         git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
         ln -sf /mnt/workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
-    - name: Update and install feeds
+    - name: 更新并安装feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
@@ -86,7 +86,7 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
-    - name: Load custom configuration
+    - name: 加载自定义配置
       run: |
         [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
@@ -94,14 +94,14 @@ jobs:
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
-    - name: SSH connection to Actions
+    - name: SSH连接到Actions
       uses: P3TERX/ssh2actions@v1.0.0
       if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh != 'false') || contains(github.event.action, 'ssh')
       env:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-    - name: Download package
+    - name: 下载软件包
       id: package
       run: |
         cd openwrt
@@ -110,29 +110,29 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Compile the firmware
+    - name: 编译固件
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
+        echo -e "$(nproc) 线程编译"
         make -j$(nproc) || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-    - name: Check space usage
+    - name: 检查磁盘空间使用情况
       if: (!cancelled())
       run: df -hT
 
-    - name: Upload bin directory
+    - name: 上传bin目录
       uses: actions/upload-artifact@v4
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: openwrt/bin
 
-    - name: Organize files
+    - name: 整理文件
       id: organize
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
@@ -141,14 +141,14 @@ jobs:
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware directory
+    - name: 上传固件目录
       uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
-    - name: Generate release tag
+    - name: 生成发布标签
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
@@ -156,7 +156,7 @@ jobs:
         touch release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware to release
+    - name: 上传固件到发布
       uses: softprops/action-gh-release@v2
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
@@ -166,7 +166,7 @@ jobs:
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
 
-    - name: Delete workflow runs
+    - name: 删除工作流运行记录
       uses: Mattraks/delete-workflow-runs@v2
       with:
         token: ${{ github.token }}
@@ -174,7 +174,7 @@ jobs:
         retain_days: 7
         keep_minimum_runs: 5
 
-    - name: Remove old Releases
+    - name: 删除旧发布
       uses: dev-drprasad/delete-older-releases@v0.3.4
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       with:
@@ -183,7 +183,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Notify Telegram
+    - name: 通知Telegram
       if: steps.compile.outputs.status == 'success' && !cancelled()
       uses: actions/github-script@v7
       with:
@@ -196,7 +196,7 @@ jobs:
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: telegramChatId, text: message })
           });
-          if (!response.ok) throw new Error('Telegram notification failed');
+          if (!response.ok) throw new Error('Telegram通知失败');
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

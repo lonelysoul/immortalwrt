@@ -91,10 +91,13 @@ compile_firmware() {
   LOCAL=$(git rev-parse HEAD)
   REMOTE=$(git rev-parse "origin/${CONFIG[BRANCH]}")
 
-  if [ "$LOCAL" != "$REMOTE" ] || [ "${CONFIG[FORCE_COMPILE]}" = true ]; then
-    if [ "${CONFIG[FORCE_COMPILE]}" = true ]; then
-      echo "检测到强制编译选项，将重新编译。"
-    else
+  # 调试输出 FORCE_COMPILE 状态
+  echo "FORCE_COMPILE 状态: ${CONFIG[FORCE_COMPILE]}"
+
+  if [ "$LOCAL" != "$REMOTE" ] || [ "${CONFIG[FORCE_COMPILE]}" = "true" ]; then
+    if [ "${CONFIG[FORCE_COMPILE]}" = "true" ]; then
+      echo "检测到强制编译选项 (-c)，将重新编译。"
+    elif [ "$LOCAL" != "$REMOTE" ]; then
       echo "检测到源码更新，将重新编译。"
     fi
 
@@ -125,7 +128,7 @@ compile_firmware() {
     echo "编译完成，总耗时：$((duration / 60)) 分 $((duration % 60)) 秒"
     echo "$(date '+%Y-%m-%d %H:%M:%S'): 编译完成"
   else
-    echo "源码已是最新，无需重新编译。"
+    echo "源码已是最新，且未启用强制编译 (-c)，无需重新编译。"
   fi
 }
 
@@ -138,7 +141,8 @@ main() {
   while getopts ":c" opt; do
     case ${opt} in
       c)
-        CONFIG[FORCE_COMPILE]=true
+        CONFIG[FORCE_COMPILE]="true"
+        echo "已启用强制编译选项 (-c)"
         ;;
       \?)
         echo "错误：无效的选项 -$OPTARG" >&2
@@ -146,6 +150,9 @@ main() {
         ;;
     esac
   done
+
+  # 调试输出 CONFIG 数组
+  echo "CONFIG 数组内容: ${CONFIG[@]}"
 
   # 检查是否已完成初始化
   if [ ! -f "${CONFIG[INIT_DONE_FLAG]}" ]; then
@@ -164,4 +171,4 @@ main() {
 }
 
 # 执行主函数
-main
+main "$@"

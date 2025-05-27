@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 配置项（可根据需要修改）
-CONFIG=(
-  REPO_URL="https://github.com/immortalwrt/immortalwrt"  # 仓库地址
-  BRANCH="master"                                        # 分支名称
-  CONFIG_URL="https://raw.githubusercontent.com/lonelysoul/immortalwrt/main/.config"  # 配置文件地址
-  SRC_DIR="$HOME/immortalwrt"                            # 源码目录
-  FORCE_COMPILE=false                                    # 是否强制编译（默认否）
-  INIT_DONE_FLAG="${HOME}/immortalwrt/.init_done"        # 初始化完成标志文件
+# 声明关联数组
+declare -A CONFIG=(
+  ["REPO_URL"]="https://github.com/immortalwrt/immortalwrt"  # 仓库地址
+  ["BRANCH"]="master"                                        # 分支名称
+  ["CONFIG_URL"]="https://raw.githubusercontent.com/lonelysoul/immortalwrt/main/.config"  # 配置文件地址
+  ["SRC_DIR"]="$HOME/immortalwrt"                            # 源码目录
+  ["FORCE_COMPILE"]="false"                                  # 是否强制编译
+  ["INIT_DONE_FLAG"]="${HOME}/immortalwrt/.init_done"        # 初始化完成标志文件
 )
 
 # 依赖包列表

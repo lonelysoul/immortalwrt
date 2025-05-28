@@ -62,14 +62,6 @@ jobs:
         df -hT
         [ $(df -h /mnt/workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "磁盘空间不足"; exit 1; }
 
-    - name: 缓存下载的软件包
-      uses: actions/cache@v4
-      with:
-        path: openwrt/dl
-        key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('openwrt/.config') }}
-        restore-keys: |
-          ${{ runner.os }}-openwrt-dl-
-
     - name: 克隆源代码
       working-directory: /mnt/workdir
       run: |

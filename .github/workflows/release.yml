@@ -65,9 +65,16 @@ jobs:
     - name: 克隆源代码
       working-directory: /mnt/workdir
       run: |
+        echo "当前目录: $PWD"
         df -hT $PWD
-        git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
+        echo "克隆仓库: $REPO_URL 分支: $REPO_BRANCH"
+        git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt || {
+          echo "克隆失败，请检查仓库地址 ($REPO_URL) 和分支 ($REPO_BRANCH)"
+          exit 1
+        }
+        ls -la
         ln -sf /mnt/workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
 
     - name: 更新并安装feeds
       run: |

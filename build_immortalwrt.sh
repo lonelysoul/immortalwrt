@@ -1,110 +1,184 @@
 #!/bin/bash
 
-set -e  # 启用错误检查，任何命令失败时停止执行
+# 配置
+REPO_URL="https://github.com/immortalwrt/immortalwrt"
+BRANCH="master"
+CONFIG_URL="https://raw.githubusercontent.com/lonelysoul/immortalwrt/main/.config"
+WORK_DIR="$HOME/immortalwrt"
+NPROC=$(nproc --ignore=1 2>/dev/null || nproc)
 
-# 可配置的环境变量
-BUILD_DIR="${BUILD_DIR:-immortalwrt}"  # 编译目录，默认为 immortalwrt
-REPO_URL="${REPO_URL:-https://github.com/immortalwrt/immortalwrt}"  # 仓库地址，默认为官方仓库
-BRANCH="${BRANCH:-master}"  # 分支，默认为 master
-CONFIG_URL="${CONFIG_URL:-https://raw.githubusercontent.com/lonelysoul/immortalwrt/refs/heads/main/.config}"  # 默认 .config 文件 URL
-MAX_JOBS="${MAX_JOBS:-$(($(nproc) + 1))}"  # 并行编译任务数，默认为 CPU 核心数 + 1
+DEPENDENCIES=(
+  ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+  bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
+  g++-multilib git libgnutls28-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+  libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
+  libreadline-dev libssl-dev libtool libyaml-dev zlib1g-dev lld llvm lrzsz genisoimage msmtp nano \
+  ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
+  python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
+  unzip vim wget xmlto xxd zstd
+)
 
-# 初始化环境
-init_environment() {
-  echo "🛠️  正在初始化环境..."
+# 参数处理
+FORCE_COMPILE=false
+DO_CLEAN=false
+DO_RESET=false
+while getopts ":fcr" opt; do
+  case ${opt} in
+    f ) FORCE_COMPILE=true ;;
+    c ) DO_CLEAN=true ;;
+    r ) DO_RESET=true ;;
+    \? )
+      echo "无效参数: -$OPTARG"
+      echo "用法: $0 [-f] [-c] [-r]"
+      echo "  -f 即使源码无更新也强制编译"
+      echo "  -c 编译前执行 make clean"
+      echo "  -r 删除源码并重新拉取编译"
+      exit 1
+      ;;
+  esac
+done
 
-  # 安装编译所需的依赖
-  echo "📦  安装依赖包..."
-  sudo apt-get update
-  sudo apt-get install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential   bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib   g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev   libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev   libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano   ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils   python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs    unzip vim wget xmlto xxd zlib1g-dev zstd
-
-  # 检查并设置 ccache（用于加速编译）
-  if ! command -v ccache &> /dev/null; then
-    echo "🔧  ccache 未安装，正在安装..."
-    sudo apt-get install -y ccache
+# 检查命令是否成功
+check_command_success() {
+  if [ $? -ne 0 ]; then
+    echo "Error: $1 failed. Exiting."
+    exit 1
   fi
-  export PATH="/usr/lib/ccache:$PATH"
-  echo "✅  环境初始化完成！"
 }
 
-# 克隆仓库
+# 检查是否是 Git 仓库
+check_git_repo() {
+  echo ">>> 检查 Git 仓库，当前目录: $(pwd)"
+  if [ ! -d ".git" ]; then
+    echo "Error: $WORK_DIR is not a Git repository."
+    echo "Possible causes: git clone failed, or directory was manually created."
+    echo "Try running with -r to reset and re-clone: ./$(basename "$0") -r"
+    exit 1
+  fi
+}
+
+# 安装依赖
+install_dependencies() {
+  echo ">>> 安装依赖包..."
+  sudo DEBIAN_FRONTEND=noninteractive apt update
+  check_command_success "apt update"
+  sudo DEBIAN_FRONTEND=noninteractive apt install -y "${DEPENDENCIES[@]}"
+  check_command_success "apt install"
+}
+
+# 克隆源码
 clone_repo() {
-  echo "📥  正在克隆仓库..."
-  git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$BUILD_DIR"
-  echo "✅  仓库克隆完成！"
+  echo ">>> 克隆源码到 $WORK_DIR..."
+  git clone -b "$BRANCH" --single-branch --filter=blob:none "$REPO_URL" "$WORK_DIR"
+  check_command_success "git clone"
 }
 
-# 应用自定义配置
-apply_config() {
-  echo "🔧  正在下载自定义 .config 文件..."
-  curl -L -o "$BUILD_DIR/.config" "$CONFIG_URL"
-  echo "✅  .config 文件已应用！"
+# 更新和安装 feeds
+update_and_install_feeds() {
+  echo ">>> 更新并安装 feeds..."
+  ./scripts/feeds update -a
+  check_command_success "feeds update"
+  ./scripts/feeds install -a
+  check_command_success "feeds install"
 }
 
-# 编译固件
-compile_firmware() {
-  echo "🔨  开始编译固件..."
-  cd "$BUILD_DIR"
-
-  # 准备编译环境
-  echo "🛠️  生成默认配置..."
-  make defconfig
-
-  echo "📦  下载所需的软件包..."
-  make -j"$MAX_JOBS" download
-
-  echo "🚀  开始编译（使用 $(nproc) 个线程）..."
-  make -j"$(nproc)"
-
-  echo "🎉  编译完成！"
+# 下载配置文件
+download_config() {
+  echo ">>> 下载配置文件到 $WORK_DIR/.config..."
+  wget -O .config "$CONFIG_URL"
+  check_command_success "wget .config"
 }
 
-# 清理工作目录
-clean_workspace() {
-  if [ -d "$BUILD_DIR" ]; then
-    echo "🧹  正在清理现有工作目录: $BUILD_DIR..."
-    rm -rf "$BUILD_DIR"
-    echo "✅  工作目录已清理！"
-  fi
-}
+# 初始化
+initialize() {
+  local is_new=false
 
-# 显示帮助信息
-show_help() {
-  echo "用法: $0 [-n]"
-  echo "  -n: 强制清理并重新编译（删除现有工作目录）"
-  exit 1
-}
-
-# 主函数
-main() {
-  # 解析参数
-  while getopts ":n" opt; do
-    case $opt in
-      n)
-        echo "🔧  强制清理模式已启用。"
-        clean_workspace
-        ;;
-      *)
-        show_help
-        ;;
-    esac
-  done
-
-  # 如果工作目录已存在且未启用强制模式，则退出
-  if [ -d "$BUILD_DIR" ]; then
-    echo "❌  目录 $BUILD_DIR 已存在。为避免覆盖，编译已中止。"
-    echo "    使用 -n 参数强制清理并重新编译。"
+  # 检查 HOME 目录权限
+  if [ ! -w "$HOME" ]; then
+    echo "Error: $HOME is not writable. Check permissions."
     exit 1
   fi
 
-  # 执行编译流程
-  init_environment
-  clone_repo
-  apply_config
-  compile_firmware
+  if [ "$DO_RESET" = true ] && [ -d "$WORK_DIR" ]; then
+    echo ">>> 重置: 删除 $WORK_DIR..."
+    rm -rf "$WORK_DIR"
+    check_command_success "rm WORK_DIR"
+  fi
 
-  echo "🎉  编译成功！输出文件位于: $BUILD_DIR/bin/targets/"
+  if [ ! -d "$WORK_DIR" ]; then
+    is_new=true
+    install_dependencies
+    clone_repo
+    cd "$WORK_DIR" || { echo "Error: Cannot access $WORK_DIR. Check permissions."; exit 1; }
+    update_and_install_feeds
+    download_config
+  else
+    cd "$WORK_DIR" || { echo "Error: Cannot access $WORK_DIR. Check permissions."; exit 1; }
+    if [ ! -f ".config" ]; then
+      download_config
+    fi
+  fi
+
+  echo "$is_new"
 }
 
-# 执行主函数
-main "$@"
+# 主逻辑
+main() {
+  echo ">>> 脚本运行，当前目录: $(pwd)"
+  echo ">>> Git 仓库目录: $WORK_DIR"
+
+  local is_new=$(initialize)
+
+  # 确保在 WORK_DIR 中执行 Git 操作
+  cd "$WORK_DIR" || { echo "Error: Cannot access $WORK_DIR. Check permissions."; exit 1; }
+
+  # 检查是否是 Git 仓库
+  check_git_repo
+
+  echo ">>> 检查源码更新..."
+  git fetch origin
+  check_command_success "git fetch"
+  LOCAL=$(git rev-parse HEAD)
+  REMOTE=$(git rev-parse origin/$BRANCH)
+
+  if [ "$is_new" = true ] || [ "$LOCAL" != "$REMOTE" ] || [ "$FORCE_COMPILE" = true ]; then
+    if [ "$is_new" = true ]; then
+      echo ">>> 首次初始化，强制编译。"
+    elif [ "$FORCE_COMPILE" = true ]; then
+      echo ">>> 强制编译模式已开启。"
+    else
+      echo ">>> 源码已更新。"
+    fi
+
+    start=$(date +%s)
+
+    git pull origin "$BRANCH"
+    check_command_success "git pull"
+
+    update_and_install_feeds
+
+    if [ "$DO_CLEAN" = true ]; then
+      echo ">>> 执行 make clean..."
+      make clean
+      check_command_success "make clean"
+    fi
+
+    make -j"$NPROC" download
+    check_command_success "make download"
+
+    make defconfig
+    check_command_success "make defconfig"
+
+    make -j"$NPROC" V=s
+    check_command_success "make compile"
+
+    end=$(date +%s)
+    echo ">>> 编译完成，总耗时：$(((end - start) / 60)) 分 $(((end - start) % 60)) 秒"
+    echo ">>> $(date '+%Y-%m-%d %H:%M:%S'): 完成"
+  else
+    echo ">>> 源码已是最新，无需编译。"
+  fi
+}
+
+main
+echo ">>> 脚本执行完成。"

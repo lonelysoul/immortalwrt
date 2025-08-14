@@ -175,7 +175,14 @@ main() {
     end=$(date +%s)
     echo ">>> 编译完成，总耗时：$(((end - start) / 60)) 分 $(((end - start) % 60)) 秒"
     echo ">>> $(date '+%Y-%m-%d %H:%M:%S'): 完成"
-  else
+
+    cd bin/targets/x86/64 
+    gunzip -c immortalwrt-x86-64-generic-squashfs-combined-efi.img.gz > ./disk.img && \
+    qemu-img convert -f raw -O qcow2 ./disk.img immortalwrt-x86-64-generic-squashfs-combined-efi.qcow2 && \
+    rm ./disk.img 
+    echo ">>> 固件转换完毕" 
+
+else
     echo ">>> 源码已是最新，无需编译。"
   fi
 }

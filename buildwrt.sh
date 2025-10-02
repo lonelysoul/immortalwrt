@@ -7,7 +7,6 @@
 #   - 首次 clone 时安装 apt 依赖（仅当工作目录中没有目标 repo 时才安装）
 #   - 支持参数化：工作目录、分支、jobs、config URL、是否跳过依赖安装、强制编译(-f)、清理(-c)、重新拉取(-r)、保留/覆盖 .config 等
 #   - 在每次 make 前执行 make download -j${JOBS}
-#   - 自动查找并解压/转换生成的 gz 镜像为 qcow2（如果存在）
 #   - 输出丰富的过程信息，便于调试和日志采集
 #
 # 使用：
@@ -204,54 +203,6 @@ do_build() {
   log "make 完成"
 }
 
-# -------------------- 子函数: 查找镜像并转换为 qcow2 --------------------
-convert_images() {
-  local target_dir="${REPO_PATH}/${TARGET_SUBPATH}"
-  log "尝试在 ${target_dir} 查找镜像（模式: ${IMG_GLOB}）"
-  if [ ! -d "${target_dir}" ]; then
-    die "目标目录不存在：${target_dir}。构建可能失败或目标不是 x86/64，请检查 bin/targets 下的内容：$(ls -1 "${REPO_PATH}/bin/targets" || true)"
-  fi
-
-  # 查找匹配的 gz 或 img 文件（取最新）
-  local found
-  # prefer exact name pattern if exists, else fallback to find
-  found="$(ls -1 "${target_dir}"/${IMG_GLOB} 2>/dev/null | sort -r | head -n1 || true)"
-  if [ -z "${found}" ]; then
-    # 尝试查找 *.img.gz 或 *.img
-    found="$(find "${target_dir}" -maxdepth 1 -type f \( -name '*img.gz' -o -name '*img' \) -print0 | xargs -0 ls -1t 2>/dev/null | head -n1 || true)"
-  fi
-
-  if [ -z "${found}" ]; then
-    log "未找到匹配的镜像文件。bin/targets/x86/64 内容如下："
-    ls -lh "${target_dir}" || true
-    return 0
-  fi
-
-  log "发现镜像: ${found}"
-
-  # 如果是 .gz，则先 gunzip 到 disk.img
-  if [[ "${found}" == *.gz ]]; then
-    local disk_img="${target_dir}/disk.img"
-    log "解压 ${found} -> ${disk_img}"
-    gunzip -c "${found}" > "${disk_img}" || die "gunzip 解压失败"
-    local qcow2_name="${found%.img.gz}.qcow2"
-    qcow2_name="$(basename "${qcow2_name%.gz}").qcow2"
-    qcow2_path="${target_dir}/${qcow2_name}"
-    log "转换 raw -> qcow2: ${disk_img} -> ${qcow2_path}"
-    qemu-img convert -f raw -O qcow2 "${disk_img}" "${qcow2_path}" || die "qemu-img 转换失败"
-    rm -f "${disk_img}" || true
-    log "转换完成：${qcow2_path}"
-  else
-    # 若已经是 .img
-    local src="${found}"
-    local qcow2_name="$(basename "${src%.img}").qcow2"
-    local qcow2_path="${target_dir}/${qcow2_name}"
-    log "转换 raw -> qcow2: ${src} -> ${qcow2_path}"
-    qemu-img convert -f raw -O qcow2 "${src}" "${qcow2_path}" || die "qemu-img 转换失败"
-    log "转换完成：${qcow2_path}"
-  fi
-}
-
 # -------------------- 主流程 --------------------
 main() {
   # 如果指定 reclone，则先删除并 clone
@@ -262,7 +213,6 @@ main() {
     clone_repo
     update_feeds
     do_build
-    convert_images
     log "reclone 模式构建完成"
     exit 0
   fi
@@ -274,7 +224,6 @@ main() {
     clone_repo
     update_feeds
     do_build
-    convert_images
     log "首次构建完成"
     exit 0
   fi
@@ -289,7 +238,6 @@ main() {
     log "检测到更新或本地变更，将继续后续构建步骤（或根据命令行选项执行 clean 等）"
     update_feeds
     do_build
-    convert_images
     log "更新后构建完成"
     exit 0
   else
@@ -298,7 +246,6 @@ main() {
       log "仓库无更新，但因 --force 指定，将强制重新构建"
       update_feeds
       do_build
-      convert_images
       log "强制构建完成"
       exit 0
     else
@@ -310,3 +257,5 @@ main() {
 
 # 运行 main
 main "$@"
+
+

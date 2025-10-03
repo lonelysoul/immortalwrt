@@ -11,29 +11,7 @@
 
 ## 步骤
 
-1. **解压固件**
-
-   - 获取`disk.img.gz`文件（本地生成或从GitHub下载）。
-
-   - 运行以下命令解压`.gz`文件：
-
-     ```bash
-     gunzip disk.img.gz
-     ```
-
-   - 此操作将生成`disk.img`文件。
-
-2. **转换为QCOW2格式**
-
-   - 将`disk.img`转换为`qcow2`格式以用于虚拟化：
-
-     ```bash
-     sudo qemu-img convert -f raw -O qcow2 /path/to/disk.img /path/to/disk.qcow2
-     ```
-
-   - 将`/path/to/disk.img`替换为你的`disk.img`文件路径，将`/path/to/disk.qcow2`替换为所需的输出路径。
-
-3. **在TrueNAS中创建ZFS卷（zvol）**
+1. **在TrueNAS中创建ZFS卷（zvol）**
 
    - 在TrueNAS web界面中，导航到**存储 &gt; 池**。
    - 创建一个新的zvol：
@@ -42,7 +20,7 @@
      - 为zvol命名（例如，`zvolname`）。
      - 保存配置。
 
-4. **将QCOW2转换为Raw并附加到Zvol**
+2. **将QCOW2转换为Raw并附加到Zvol**
 
    - 将`qcow2`镜像转换为raw格式并写入zvol：
 
@@ -52,7 +30,7 @@
 
    - 将`/path/to/disk.qcow2`替换为你的`qcow2`文件路径，将`zvolname`替换为你的zvol名称。
 
-5. **在TrueNAS中创建和配置虚拟机**
+3. **在TrueNAS中创建和配置虚拟机**
 
    - 在TrueNAS web界面中，导航到**虚拟化 &gt; 虚拟机**。
    - 创建一个新的虚拟机：
@@ -61,7 +39,7 @@
      - 根据需要配置其他设置（例如，网络、显示）。
    - 保存虚拟机配置。
 
-6. **启动虚拟机**
+4. **启动虚拟机**
 
    - 从TrueNAS界面启动虚拟机。
    - 验证虚拟机是否使用固件正确启动。

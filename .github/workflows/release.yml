@@ -1,4 +1,4 @@
-name: 包含dae的固件
+name: homeproxy
 
 on:
   repository_dispatch:

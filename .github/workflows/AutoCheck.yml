@@ -9,7 +9,7 @@
 # Description: Source code update checker
 #
 
-name: AutoCheck
+name: Auto Update Check
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master

@@ -1,12 +1,8 @@
 # 在TrueNAS中生成和使用磁盘镜像
 
-本指南提供了在TrueNAS中生成`disk.img.gz`固件、转换格式并使用生成的磁盘镜像设置虚拟机的分步说明。
-
 ## 前提条件
 
-- 一个`disk.img.gz`固件文件（本地生成或从GitHub下载）。
 - 对TrueNAS系统的管理员访问权限。
-- 命令行工具：`gunzip`、`qemu-img`。
 - 足够存储空间用于ZFS卷（zvol），最小大小为2GB。
 
 ## 步骤

@@ -1,4 +1,4 @@
-name: homeproxy
+name: HomeProxy Firmware Build
 
 on:
   repository_dispatch:

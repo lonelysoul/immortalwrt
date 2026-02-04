@@ -17,7 +17,7 @@ env:
 on:
   workflow_dispatch:
   schedule:
-    - cron: 30 19 * * *
+    - cron: 30 21 * * *
 
 jobs:
   check:
@@ -36,7 +36,7 @@ jobs:
 
     - name: Compare Commit Hash
       id: cacheHash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: .commitHash
         key: HEAD-${{ steps.getHash.outputs.commitHash }}

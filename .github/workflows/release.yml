@@ -174,7 +174,7 @@ jobs:
 
     - name: 通知Telegram
       if: steps.compile.outputs.status == 'success' && !cancelled()
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;

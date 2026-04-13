@@ -199,6 +199,7 @@ do_build() {
 
   log "开始编译： make V=s -j${JOBS}"
   # 这里保留 V=s 以输出详细构建日志
+  make defconfig
   make V=s -j"${JOBS}" || die "make 编译失败，请查看上面的日志定位失败包/步骤"
   log "make 完成"
 }
@@ -257,5 +258,8 @@ main() {
 
 # 运行 main
 main "$@"
+
+
+
 
 

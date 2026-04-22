@@ -116,8 +116,8 @@ jobs:
         body_path: release.txt
         files: |
           openwrt/bin/targets/**/**/*
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 删除工作流运行记录
       uses: Mattraks/delete-workflow-runs@v2

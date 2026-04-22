@@ -29,6 +29,13 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v6
 
+    - name: SSH连接到Actions
+      uses: P3TERX/ssh2actions@v1.0.0
+      if: env.SSH_ENABLED == 'true' || contains(github.event.action, 'ssh')
+      env:
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
     - name: 初始化环境
       env:
         DEBIAN_FRONTEND: noninteractive

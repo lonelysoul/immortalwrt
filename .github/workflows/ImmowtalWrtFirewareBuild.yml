@@ -1,4 +1,4 @@
-name: HomeProxy Firmware Build
+name: ImmortalWrt Firmware Build
 
 on:
   repository_dispatch:

@@ -1,64 +1,60 @@
-name: ImmortalWrt Firmware Build
+name: ImmortalWrt Firmware Build (x86 Stable)
 
 on:
-  repository_dispatch:
   workflow_dispatch:
+  repository_dispatch:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master
   SSH_ENABLED: false
-  FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
-  DIY_P1_SH: diy-part1.sh
-  DIY_P2_SH: diy-part2.sh
-  UPLOAD_RELEASE: true
-  DEBIAN_FRONTEND: noninteractive
+  FEEDS_CONF: feeds.conf.default
   TZ: Asia/Shanghai
+  DEBIAN_FRONTEND: noninteractive
+  UPLOAD_RELEASE: true
 
 jobs:
-  ImmortalWrt:
+  build:
     runs-on: ubuntu-24.04
     permissions:
-      actions: write
       contents: write
 
     steps:
-    - name: 检出代码
+
+    # 🧾 1. 拉取仓库（含.config）
+    - name: Checkout repository
       uses: actions/checkout@v6
 
-    - name: 初始化环境
-      env:
-        DEBIAN_FRONTEND: noninteractive
+    # 🧰 2. 初始化环境
+    - name: Init environment
       run: |
-        echo "msmtp msmtp/apparmor boolean false" | sudo debconf-set-selections
+        echo "===== 系统信息 ====="
+        uname -a
+        lsb_release -a || true
+        free -h
+        df -hT
         echo "msmtp msmtp/apparmor boolean false" | sudo debconf-set-selections
         sudo apt-get update
         sudo apt-get install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev  libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs unzip vim wget xmlto xxd zlib1g-dev zstd 
-        sudo -E apt-get -qq autoremove --purge
         sudo timedatectl set-timezone "$TZ"
-        mkdir -p "${GITHUB_WORKSPACE}/compile"
 
-    - name: 克隆源代码
-      working-directory: ${{ github.workspace }}/compile
+    # 📥 3. 克隆源码
+    - name: Clone source
       run: |
-        echo "当前目录: $PWD"
-        df -hT $PWD
-        echo "克隆仓库: $REPO_URL 分支: $REPO_BRANCH"
-        git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt || {
-          echo "克隆失败，请检查仓库地址 ($REPO_URL) 和分支 ($REPO_BRANCH)"
-          exit 1
-        }
-        ls -la
+        mkdir -p compile
+        cd compile
+        git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
         ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
 
-    - name: 更新并安装feeds
-      run: |
-        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
-        chmod +x $DIY_P1_SH
-        cd openwrt
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
+    # ⚡ 4. 缓存（必须在源码存在后）
+    - name: Restore cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          openwrt/dl
+          openwrt/.ccache
+        key: ${{ runner.os }}-openwrt-${{ hashFiles('.config') }}
 
     - name: SSH连接到Actions
       uses: P3TERX/ssh2actions@v1.0.0
@@ -67,59 +63,97 @@ jobs:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-    - name: 下载软件包
-      id: package
+    # ⚙️ 5. feeds
+    - name: Update feeds
+      run: |
+        [ -f "$FEEDS_CONF" ] && cp $FEEDS_CONF openwrt/feeds.conf.default
+        cd openwrt
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    # 🧠 6. 加载 config
+    - name: Load config
+      run: |
+        set -e
+
+        CONFIG_PATH="$GITHUB_WORKSPACE/$CONFIG_FILE"
+
+        if [ ! -f "$CONFIG_PATH" ]; then
+          echo "❌ .config 不存在"
+          exit 1
+        fi
+
+        cp "$CONFIG_PATH" openwrt/.config
+        cd openwrt
+
+        make defconfig
+
+        echo "===== 当前 Target ====="
+        grep CONFIG_TARGET .config | head
+
+        # ❗强制 x86
+        if ! grep -q "CONFIG_TARGET_x86=y" .config; then
+          echo "❌ 当前不是 x86 配置"
+          exit 1
+        fi
+
+    # 📦 7. 下载依赖
+    - name: Download packages
       run: |
         cd openwrt
-        make defconfig
-        make download -j8
-        find dl -size -1024c -exec ls -l {} \;
-        find dl -size -1024c -exec rm -f {} \;
+        make download -j$(nproc)
 
-    - name: 编译固件
+    # 🏗️ 8. 编译
+    - name: Compile firmware
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) 线程编译"
+
+        export CCACHE_DIR=$PWD/.ccache
+        export CCACHE_MAXSIZE=2G
+        ccache -M 2G
+
+        echo "===== 开始编译 ====="
         make -j$(nproc) || make -j1 V=s
+
         echo "status=success" >> $GITHUB_OUTPUT
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
-        echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-    - name: 检查磁盘空间使用情况
-      if: (!cancelled())
-      run: df -hT
-
-    - name: 整理文件
-      id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+    # 📂 9. 检查固件
+    - name: Check firmware
       run: |
-        cd openwrt/bin/targets/*/*
-        rm -rf packages
-        rm -rf *targz*  *rootfs* *.bin
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+        echo "===== 固件输出 ====="
+        find openwrt/bin/targets -type f | grep -E "\.(img|img.gz|bin)$" || {
+          echo "❌ 未生成固件"
+          exit 1
+        }
 
-    - name: 生成发布标签
+    # 🏷️ 10. 生成 tag
+    - name: Create tag
       id: tag
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: env.UPLOAD_RELEASE == 'true'
       run: |
-        echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        touch release.txt
-        echo "status=success" >> $GITHUB_OUTPUT
+        TAG=$(date +"%Y.%m.%d-%H%M")
+        echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+        echo "Build Time: $(date)" > release.txt
 
-    - name: 上传固件到发布
+    # 🚀 11. 发布
+    - name: Upload Release
       uses: softprops/action-gh-release@v3
+      if: env.UPLOAD_RELEASE == 'true'
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
         files: |
-          openwrt/bin/targets/**/**/*
+          openwrt/bin/targets/x86/64/*.img.gz
+          openwrt/bin/targets/x86/64/*.img
+          openwrt/bin/targets/x86/64/*.bin
+          openwrt/bin/targets/x86/64/*.manifest
+          openwrt/bin/targets/x86/64/*.buildinfo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 删除工作流运行记录
+    # 🧹 12. 删除旧 workflow 记录
+    - name: Cleanup workflow runs
       uses: Mattraks/delete-workflow-runs@v2
       with:
         token: ${{ github.token }}
@@ -127,29 +161,31 @@ jobs:
         retain_days: 5
         keep_minimum_runs: 2
 
-    - name: 删除旧发布
+    # 🗑️ 13. 删除旧 release
+    - name: Delete old releases
       uses: dev-drprasad/delete-older-releases@v0.3.4
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: env.UPLOAD_RELEASE == 'true'
       with:
         keep_latest: 7
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 通知Telegram
-      if: steps.compile.outputs.status == 'success' && !cancelled()
+    # 📢 14. Telegram 通知
+    - name: Notify Telegram
+      if: success()
       uses: actions/github-script@v9
       with:
         script: |
-          const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
-          const telegramChatId = process.env.TELEGRAM_CHAT_ID;
-          const message = 'Immortalwrt基于今日最新代码已经编译完成了！下载地址：https://github.com/lonelysoul/immortalwrt/releases';
-          const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          const token = process.env.TELEGRAM_BOT_TOKEN;
+          const chat = process.env.TELEGRAM_CHAT_ID;
+          const msg = `✅ ImmortalWrt x86 编译完成\n📦 Release: https://github.com/${context.repo.owner}/${context.repo.repo}/releases`;
+
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: telegramChatId, text: message })
+            body: JSON.stringify({ chat_id: chat, text: msg })
           });
-          if (!response.ok) throw new Error('Telegram通知失败');
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

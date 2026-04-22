@@ -7,7 +7,7 @@ on:
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master
-  SSH_ENABLED: false
+  SSH_ENABLED: true
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
@@ -50,6 +50,11 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
 
+
+    - name: 克隆前检查磁盘空间
+      run: |
+        df -hT
+        [ $(df -h /workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "磁盘空间不足"; exit 1; }
 
     - name: 验证工作目录权限
       run: |

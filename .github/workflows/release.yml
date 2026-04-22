@@ -50,11 +50,6 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
 
-    - name: 克隆前检查磁盘空间
-      run: |
-        df -hT
-        [ $(df -h /workdir | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "磁盘空间不足"; exit 1; }
-
 
     - name: 验证工作目录权限
       run: |

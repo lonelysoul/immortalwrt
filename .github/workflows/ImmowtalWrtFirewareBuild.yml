@@ -163,11 +163,8 @@ jobs:
 
     # 🗑️ 13. 删除旧 release
     - name: Delete old releases
-      uses: dev-drprasad/delete-older-releases@v0.3.4
-      if: env.UPLOAD_RELEASE == 'true'
-      with:
-        keep_latest: 7
-        delete_tags: true
+      run: |
+        gh release list --limit 7 | tail -n +8 | awk '{print $1}' | xargs -I {} gh release delete {} -y
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

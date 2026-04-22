@@ -50,16 +50,6 @@ jobs:
         sudo mkdir -p /home/runner/work/immortalwrt/immortalwrt/bianyi
         sudo chown $USER:$GROUPS /home/runner/work/immortalwrt/immortalwrt/bianyi
 
-
-    - name: 克隆前检查磁盘空间
-      run: |
-        df -hT
-        [ $(df -h /home/runner/work/immortalwrt/immortalwrt/bianyi | awk 'NR==2 {print $4}' | grep -o '[0-9]\+') -gt 10 ] || { echo "磁盘空间不足"; exit 1; }
-
-    - name: 验证工作目录权限
-      run: |
-        [ -w /home/runner/work/immortalwrt/immortalwrt/bianyi ] || { echo "工作目录/home/runner/work/immortalwrt/immortalwrt/bianyi权限不足"; exit 1; }
-        
     - name: 克隆源代码
       working-directory: /home/runner/work/immortalwrt/immortalwrt/bianyi
       run: |

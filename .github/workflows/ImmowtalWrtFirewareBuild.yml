@@ -164,7 +164,7 @@ jobs:
     # 🗑️ 13. 删除旧 release
     - name: Delete old releases
       run: |
-        gh release list --limit 7 | tail -n +8 | awk '{print $1}' | xargs -I {} gh release delete {} -y
+        gh release list --limit 30 | tail -n +8 | awk '{print $1}' | xargs -I {} gh release delete {} -y
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

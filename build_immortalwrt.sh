@@ -62,6 +62,7 @@ done
 install_deps() {
     log "安装依赖..."
     sudo apt update
+    echo "msmtp msmtp/apparmor boolean false" | debconf-set-selections
     sudo apt install -y "${APT_PKGS[@]}"
 }
 

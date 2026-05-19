@@ -146,7 +146,6 @@ main() {
 
     # 首次
     if [[ ! -d "$REPO_PATH" ]]; then
-        install_deps
         clone_repo
         update_feeds
         update_config

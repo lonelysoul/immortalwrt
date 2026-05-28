@@ -7,7 +7,7 @@ on:
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master
-  SSH_ENABLED: true
+  SSH_ENABLED: false
   CONFIG_FILE: .config
   FEEDS_CONF: feeds.conf.default
   TZ: Asia/Shanghai
@@ -46,15 +46,6 @@ jobs:
         cd compile
         git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
         ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
-
-    # ⚡ 4. 缓存（必须在源码存在后）
-    - name: Restore cache
-      uses: actions/cache@v5
-      with:
-        path: |
-          openwrt/dl
-          openwrt/.ccache
-        key: ${{ runner.os }}-openwrt-${{ hashFiles('.config') }}
 
     - name: SSH连接到Actions
       uses: P3TERX/ssh2actions@v1.0.0

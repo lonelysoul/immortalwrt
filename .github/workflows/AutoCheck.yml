@@ -61,8 +61,5 @@ jobs:
         retain_days: 1
         keep_minimum_runs: 3
 
-    - name: Bark Success
-      if: success()
-      run: |
-        curl "https://api.day.app/${{ secrets.BARK_KEY }}/GitHub_Action/ImmortalWrt_x86已经编译完成✅"
+
         

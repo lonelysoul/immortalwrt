@@ -59,6 +59,10 @@ jobs:
       run: |
         [ -f "$FEEDS_CONF" ] && cp $FEEDS_CONF openwrt/feeds.conf.default
         cd openwrt
+        cat >> feeds.conf.default << 'EOF'
+        src-git lucibandix https://github.com/timsaya/luci-app-bandix-plus.git
+        src-git bandix https://github.com/timsaya/openwrt-bandix-plus.git
+        EOF
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 

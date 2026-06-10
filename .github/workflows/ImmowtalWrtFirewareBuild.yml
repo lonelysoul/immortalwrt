@@ -22,21 +22,6 @@ jobs:
 
     steps:
 
-    - name: Free disk space
-      run: |
-        echo "===== 系统信息 ====="
-        uname -a
-        lsb_release -a || true
-        free -h
-        df -hT
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-        sudo docker image prune --all --force
-        echo "===== 系统信息 ====="
-        uname -a
-        lsb_release -a || true
-        free -h
-        df -hT
-
     # 🧾 1. 拉取仓库（含.config）
     - name: Checkout repository
       uses: actions/checkout@v6

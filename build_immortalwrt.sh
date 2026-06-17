@@ -97,13 +97,13 @@ update_feeds() {
     log "更新 feeds..."
     ./scripts/feeds update -a
     ./scripts/feeds install -a
-    find ./ | grep Makefile | grep v2ray-geodata | xargs rm -f
-    find ./ | grep Makefile | grep mosdns | xargs rm -f
-    rm -rf package/mosdns
-    rm -rf package/v2ray-geodata
-    git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
-    git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
-}
+    # find ./ | grep Makefile | grep v2ray-geodata | xargs rm -f
+    # find ./ | grep Makefile | grep mosdns | xargs rm -f
+    # rm -rf package/mosdns
+    # rm -rf package/v2ray-geodata
+    # git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
+    # git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
+}# 
 
 ########################################
 # config

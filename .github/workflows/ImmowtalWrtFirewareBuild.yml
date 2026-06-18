@@ -24,7 +24,7 @@ jobs:
 
     # 🧾 1. 拉取仓库（含.config）
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     # 🧰 2. 初始化环境
     - name: Init environment

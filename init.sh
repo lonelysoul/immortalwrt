@@ -98,7 +98,8 @@ apt-get install -y \
     zlib1g-dev \
     file \
     wget \
-    sudo
+    sudo \
+    llvm
 
 # -------------------------
 # 检查用户是否已存在

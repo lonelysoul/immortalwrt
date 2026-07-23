@@ -7,7 +7,7 @@ on:
 env:
   REPO_URL: https://github.com/openwrt/openwrt
   REPO_BRANCH: master
-  SSH_ENABLED: false
+  SSH_ENABLED: true
   CONFIG_FILE: .openwrt
   FEEDS_CONF: feeds.conf.default
   TZ: Asia/Shanghai

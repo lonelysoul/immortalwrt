@@ -86,7 +86,7 @@ jobs:
           ccache --show-config
 
       - name: Cache OpenWrt downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: openwrt/dl
           key: openwrt-dl-${{ runner.os }}-${{ hashFiles('feeds.conf.default') }}
@@ -94,7 +94,7 @@ jobs:
             openwrt-dl-${{ runner.os }}-
 
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .ccache
           key: openwrt-ccache-${{ runner.os }}-${{ hashFiles('.openwrt') }}

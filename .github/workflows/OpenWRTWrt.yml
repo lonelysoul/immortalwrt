@@ -1,0 +1,369 @@
+name: OpenWrt x86/64 Firmware Build
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # OpenWrt 源码配置
+  REPO_URL: https://github.com/openwrt/openwrt.git
+  REPO_BRANCH: master
+
+  # 自定义配置文件
+  CONFIG_FILE: .openwrt
+  FEEDS_CONF: feeds.conf.default
+
+  # DIY 自定义脚本
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
+
+  # 第三方软件源
+  DAED_REPO: https://github.com/QiuSimons/luci-app-daed.git
+  DAED_BRANCH: master
+
+  # 环境与编译参数
+  TZ: Asia/Shanghai
+  DEBIAN_FRONTEND: noninteractive
+  CCACHE_MAXSIZE: 4G
+
+  # 功能开关
+  SSH_ENABLED: false
+  UPLOAD_RELEASE: true
+
+jobs:
+  build:
+    name: Build OpenWrt x86/64
+    runs-on: ubuntu-24.04
+
+    steps:
+      # --------------------------------------------------------
+      # 1. 环境准备与依赖安装
+      # --------------------------------------------------------
+      - name: Checkout configuration repository
+        uses: actions/checkout@v4
+
+      - name: Initialize build environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "=== System Information ==="
+          uname -a
+          lsb_release -a || true
+          echo -e "\nCPU Cores: $(nproc)"
+          free -h
+          df -hT
+
+          echo -e "\n=== Install build dependencies ==="
+          sudo timedatectl set-timezone "$TZ"
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential clang llvm lld flex bison gawk gcc-multilib g++-multilib \
+            gettext git libncurses-dev libssl-dev python3-setuptools rsync swig unzip \
+            zlib1g-dev file wget curl ccache xsltproc libxml-parser-perl libelf-dev \
+            device-tree-compiler quilt python3 python3-pip python3-venv jq
+
+          echo -e "\n=== Tool versions ==="
+          gcc --version | head -n 1
+          clang --version | head -n 1
+          ccache --version | head -n 1
+          python3 --version
+          git --version
+
+      # --------------------------------------------------------
+      # 2. 缓存配置
+      # --------------------------------------------------------
+      - name: Configure ccache
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/.ccache"
+          ccache --set-config=cache_dir="$GITHUB_WORKSPACE/.ccache"
+          ccache --set-config=max_size="${CCACHE_MAXSIZE}"
+          ccache --zero-stats
+          ccache --show-config
+
+      - name: Cache OpenWrt downloads
+        uses: actions/cache@v4
+        with:
+          path: openwrt/dl
+          key: openwrt-dl-${{ runner.os }}-${{ hashFiles('feeds.conf.default') }}
+          restore-keys: |
+            openwrt-dl-${{ runner.os }}-
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: openwrt-ccache-${{ runner.os }}-${{ hashFiles('.openwrt') }}
+          restore-keys: |
+            openwrt-ccache-${{ runner.os }}-
+
+      # --------------------------------------------------------
+      # 3. 源码与 Feeds 处理
+      # --------------------------------------------------------
+      - name: Clone OpenWrt source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --depth=1 --single-branch --filter=blob:none \
+            --branch "$REPO_BRANCH" "$REPO_URL" openwrt
+          
+          cd openwrt
+          echo "=== OpenWrt source info ==="
+          git remote -v
+          git log -1 --oneline
+
+      - name: SSH Debug Session
+        if: env.SSH_ENABLED == 'true' || contains(github.event.action, 'ssh')
+        uses: P3TERX/ssh2actions@v1.0.0
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+      - name: Load custom feeds
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SOURCE_FEEDS="$GITHUB_WORKSPACE/$FEEDS_CONF"
+          TARGET_FEEDS="$GITHUB_WORKSPACE/openwrt/feeds.conf.default"
+
+          if [ -f "$SOURCE_FEEDS" ]; then
+            echo "Using custom feeds configuration."
+            cp "$SOURCE_FEEDS" "$TARGET_FEEDS"
+          fi
+          cat "$TARGET_FEEDS"
+
+      - name: Run DIY Part 1
+        shell: bash
+        run: |
+          set -euxo pipefail
+          DIY_SCRIPT="$GITHUB_WORKSPACE/$DIY_P1_SH"
+          if [ -f "$DIY_SCRIPT" ]; then
+            chmod +x "$DIY_SCRIPT"
+            cd "$GITHUB_WORKSPACE/openwrt"
+            "$DIY_SCRIPT"
+          fi
+
+      - name: Update and install feeds
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$GITHUB_WORKSPACE/openwrt"
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Add luci-app-daed
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$GITHUB_WORKSPACE/openwrt"
+          rm -rf package/dae
+          git clone --depth=1 --single-branch --branch "$DAED_BRANCH" "$DAED_REPO" package/dae
+
+      # --------------------------------------------------------
+      # 4. 配置修改与校验
+      # --------------------------------------------------------
+      - name: Load custom files
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SOURCE_FILES="$GITHUB_WORKSPACE/files"
+          TARGET_FILES="$GITHUB_WORKSPACE/openwrt/files"
+          if [ -d "$SOURCE_FILES" ]; then
+            rm -rf "$TARGET_FILES"
+            cp -a "$SOURCE_FILES" "$TARGET_FILES"
+          fi
+
+      - name: Load OpenWrt configuration
+        shell: bash
+        run: |
+          set -euxo pipefail
+          CONFIG_PATH="$GITHUB_WORKSPACE/$CONFIG_FILE"
+          TARGET_CONFIG="$GITHUB_WORKSPACE/openwrt/.config"
+          if [ ! -f "$CONFIG_PATH" ]; then
+            echo "ERROR: $CONFIG_FILE not found." && exit 1
+          fi
+          cp "$CONFIG_PATH" "$TARGET_CONFIG"
+
+      - name: Run DIY Part 2
+        shell: bash
+        run: |
+          set -euxo pipefail
+          DIY_SCRIPT="$GITHUB_WORKSPACE/$DIY_P2_SH"
+          if [ -f "$DIY_SCRIPT" ]; then
+            chmod +x "$DIY_SCRIPT"
+            cd "$GITHUB_WORKSPACE/openwrt"
+            "$DIY_SCRIPT"
+          fi
+
+      - name: Run make defconfig & Check Target
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$GITHUB_WORKSPACE/openwrt"
+          make defconfig
+
+          # 校验 Target 是否为 x86/64
+          grep -q '^CONFIG_TARGET_x86=y' .config || { echo "ERROR: Target is not x86."; exit 1; }
+          grep -q '^CONFIG_TARGET_x86_64=y' .config || { echo "ERROR: Target is not x86/64."; exit 1; }
+          echo "x86/64 target verified successfully."
+
+      # --------------------------------------------------------
+      # 5. 下载依赖与编译
+      # --------------------------------------------------------
+      - name: Download package sources
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$GITHUB_WORKSPACE/openwrt"
+          make download -j"$(nproc)" V=s
+          find dl -type f | wc -l
+          du -sh dl
+
+      - name: Compile firmware
+        id: compile
+        shell: bash
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE/openwrt"
+          export CCACHE_DIR="$GITHUB_WORKSPACE/.ccache"
+
+          echo "Starting build on $(nproc) threads..."
+          if ! make -j"$(nproc)" V=s; then
+            echo "Parallel build failed. Retrying with single job..."
+            make -j1 V=s
+          fi
+
+          ccache --show-stats || true
+          echo "status=success" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-build-logs
+          path: |
+            openwrt/logs
+            openwrt/.config
+            openwrt/tmp
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # --------------------------------------------------------
+      # 6. 固件导出与 Release 收集
+      # --------------------------------------------------------
+      - name: Check firmware output
+        shell: bash
+        run: |
+          set -e
+          TARGET_DIR="openwrt/bin/targets/x86/64"
+          if [ ! -d "$TARGET_DIR" ]; then
+            echo "ERROR: Target directory not found." && exit 1
+          fi
+
+          du -sh "$TARGET_DIR"
+          if ! find "$TARGET_DIR" -maxdepth 1 -type f \( -name "*.img.gz" -o -name "*.img" \) | grep -q .; then
+            echo "ERROR: No firmware image generated." && exit 1
+          fi
+
+      - name: Generate build information
+        id: build_info
+        shell: bash
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE/openwrt"
+          BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+          OPENWRT_COMMIT=$(git rev-parse HEAD)
+          OPENWRT_COMMIT_SHORT=$(git rev-parse --short HEAD)
+          DAED_COMMIT=$(git -C package/dae rev-parse HEAD 2>/dev/null || echo "unknown")
+          DAED_COMMIT_SHORT=$(git -C package/dae rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+          TAG="OpenWrt-x86_64-${BUILD_TIMESTAMP}"
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          cat > "$GITHUB_WORKSPACE/release.txt" <<EOF
+          OpenWrt x86/64 Firmware
+          Build Time: $BUILD_TIME
+          OpenWrt Branch: $REPO_BRANCH
+          OpenWrt Commit: $OPENWRT_COMMIT ($OPENWRT_COMMIT_SHORT)
+          DAED Commit: $DAED_COMMIT ($DAED_COMMIT_SHORT)
+          Target: x86/64
+          Runner: ubuntu-24.04
+          Build Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          EOF
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt-x86_64-firmware
+          path: openwrt/bin/targets/x86/64/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload GitHub Release
+        if: env.UPLOAD_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.build_info.outputs.release_tag }}
+          name: OpenWrt x86/64 ${{ steps.build_info.outputs.release_tag }}
+          body_path: release.txt
+          files: |
+            openwrt/bin/targets/x86/64/*.img
+            openwrt/bin/targets/x86/64/*.img.gz
+            openwrt/bin/targets/x86/64/*.bin
+            openwrt/bin/targets/x86/64/*.manifest
+            openwrt/bin/targets/x86/64/*.buildinfo
+            openwrt/bin/targets/x86/64/sha256sums
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------------
+      # 7. 清理与通知
+      # --------------------------------------------------------
+      - name: Cleanup old releases
+        if: env.UPLOAD_RELEASE == 'true'
+        shell: bash
+        run: |
+          set -e
+          gh release list --limit 100 --json tagName --jq '.[7:] | .[].tagName' | while read -r TAG; do
+            if [ -n "$TAG" ]; then
+              echo "Deleting release: $TAG"
+              gh release delete "$TAG" --yes
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 5
+          keep_minimum_runs: 2
+
+      - name: Telegram notification
+        if: success() && env.UPLOAD_RELEASE == 'true'
+        shell: bash
+        run: |
+          set -e
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
+            MESSAGE="✅ OpenWrt x86/64 编译完成📦 Release:https://github.com/${{ github.repository }}/releases🔖 Tag:${{ steps.build_info.outputs.release_tag }}🧩 OpenWrt:${{ github.sha }}"
+            curl -fsS -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              --data-urlencode "text=$MESSAGE"
+          fi
+
+      - name: Bark notification
+        if: success()
+        shell: bash
+        run: |
+          set -e
+          if [ -n "${{ secrets.BARK_KEY }}" ]; then
+            curl -fsS "https://api.day.app/${{ secrets.BARK_KEY }}/OpenWrt_x86_64/编译完成✅"
+          fi

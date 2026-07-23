@@ -43,7 +43,7 @@ jobs:
       # 1. 环境准备与依赖安装
       # --------------------------------------------------------
       - name: Checkout configuration repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Initialize build environment
         shell: bash

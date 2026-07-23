@@ -306,7 +306,7 @@ jobs:
 
       - name: Upload GitHub Release
         if: env.UPLOAD_RELEASE == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.build_info.outputs.release_tag }}
           name: OpenWrt x86/64 ${{ steps.build_info.outputs.release_tag }}

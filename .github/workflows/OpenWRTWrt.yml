@@ -1,4 +1,4 @@
-name: OpenWrt x86/64 Firmware Build
+name: OpenWrt x86/64 Firmware Build - New
 
 on:
   workflow_dispatch:

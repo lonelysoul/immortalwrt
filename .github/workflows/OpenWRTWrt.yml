@@ -30,7 +30,7 @@ env:
   CCACHE_MAXSIZE: 4G
 
   # 功能开关
-  SSH_ENABLED: true
+  SSH_ENABLED: false
   UPLOAD_RELEASE: true
 
 jobs:

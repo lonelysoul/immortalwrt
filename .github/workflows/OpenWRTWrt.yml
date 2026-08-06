@@ -36,7 +36,7 @@ env:
 jobs:
   build:
     name: Build OpenWrt x86/64
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       # --------------------------------------------------------
@@ -58,6 +58,12 @@ jobs:
 
           echo -e "\n=== Install build dependencies ==="
           sudo timedatectl set-timezone "$TZ"
+          
+          sudo apt-get -qq update
+          sudo apt-get -qq install binutils bison build-essential bzip2 cmake cpio curl flex gawk git gperf haveged libelf-dev libssl-dev libtool ninja-build p7zip p7zip-full patch pkgconf python3 python3-setuptools qemu-utils rsync squashfs-tools subversion unzip vim wget xxd zlib1g-dev aria2 autoconf automake autopoint device-tree-compiler gettext libncurses5-dev libncursesw5-dev libreadline-dev libpython3-dev libfuse-dev libglib2.0-dev libmpc-dev libmpfr-dev libgmp3-dev libltdl-dev intltool help2man mkisofs msmtp lrzsz scons texinfo clang file gcc-multilib g++-multilib
+          sudo apt-get -qq autoremove --purge && sudo apt-get -qq clean
+          sudo timedatectl set-timezone $TIME_ZONE
+          
           sudo apt-get update
           sudo apt-get install -y \
             build-essential clang llvm lld flex bison gawk gcc-multilib g++-multilib \

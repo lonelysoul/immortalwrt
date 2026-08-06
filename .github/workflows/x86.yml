@@ -1,0 +1,228 @@
+name: 编译 OpenWrt
+
+##########################################################
+# 工作流触发方式
+##########################################################
+on:
+
+  # 手动运行
+  workflow_dispatch:
+    inputs:
+
+      branch:
+        description: "OpenWrt 分支(master/openwrt-24.10)"
+        required: true
+        default: "main"
+
+##########################################################
+# 环境变量
+##########################################################
+env:
+
+  # OpenWrt 官方仓库
+  REPO_URL: https://github.com/openwrt/openwrt
+
+  # 工作目录
+  WORKDIR: openwrt
+
+##########################################################
+# 编译任务
+##########################################################
+jobs:
+
+  build:
+
+    # GitHub Ubuntu Runner
+    runs-on: ubuntu-24.04
+
+    steps:
+
+    ######################################################
+    # 第一步
+    # 查看磁盘
+    ######################################################
+    - name: 查看初始磁盘空间
+      run: |
+        echo "========== df =========="
+        df -h
+        echo
+        echo "========== free =========="
+        free -h
+
+    ######################################################
+    # 第二步
+    # 删除GitHub Runner不用的软件
+    ######################################################
+    - name: 清理Runner
+      run: |
+
+        sudo rm -rf \
+          /usr/share/dotnet \
+          /usr/local/lib/android \
+          /opt/ghc \
+          /opt/hostedtoolcache/CodeQL
+
+        docker image prune -af
+
+        echo "===== 清理完成 ====="
+
+        df -h
+
+    ######################################################
+    # 第三步
+    # 安装编译依赖
+    ######################################################
+    - name: 安装依赖
+      run: |
+
+        sudo apt update
+
+        sudo apt install -y \
+        build-essential \
+        clang \
+        flex \
+        bison \
+        g++ \
+        gawk \
+        gcc-multilib \
+        g++-multilib \
+        gettext \
+        git \
+        libncurses-dev \
+        libssl-dev \
+        python3 \
+        python3-distutils \
+        python3-setuptools \
+        rsync \
+        unzip \
+        zlib1g-dev \
+        file \
+        wget \
+        curl \
+        swig \
+        cmake \
+        ninja-build \
+        ccache
+
+    ######################################################
+    # 第四步
+    # 下载源码
+    ######################################################
+    - name: Clone OpenWrt
+      run: |
+
+        git clone \
+        --depth=1 \
+        -b ${{ github.event.inputs.branch }} \
+        ${{ env.REPO_URL }} \
+        ${{ env.WORKDIR }}
+
+    ######################################################
+    # 第五步
+    # 记录开始时间
+    ######################################################
+    - name: 开始计时
+      run: |
+        echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+
+    ######################################################
+    # 第六步
+    # 更新 feeds
+    ######################################################
+    - name: Update Feeds
+      working-directory: ${{ env.WORKDIR }}
+      run: |
+
+        ./scripts/feeds update -a
+
+        ./scripts/feeds install -a
+
+    ######################################################
+    # 第七步
+    # 放自己的.config
+    ######################################################
+    - name: 导入配置
+      run: |
+
+        cp .config \
+        ${{ env.WORKDIR }}/.config
+
+    ######################################################
+    # 第八步
+    # 下载源码
+    ######################################################
+    - name: 下载源码
+      working-directory: ${{ env.WORKDIR }}
+      run: |
+
+        make defconfig
+
+        make download -j$(nproc)
+
+    ######################################################
+    # 第九步
+    # 开始编译
+    ######################################################
+    - name: 编译
+      working-directory: ${{ env.WORKDIR }}
+      run: |
+
+        make -j$(nproc) V=s
+
+    ######################################################
+    # 第十步
+    # 统计耗时
+    ######################################################
+    - name: 编译耗时
+      if: always()
+      run: |
+
+        END=$(date +%s)
+
+        TIME=$((END-START_TIME))
+
+        H=$((TIME/3600))
+        M=$(((TIME%3600)/60))
+        S=$((TIME%60))
+
+        echo "========================"
+        echo "编译耗时：${H}小时${M}分${S}秒"
+        echo "========================"
+
+    ######################################################
+    # 第十一步
+    # 上传 Firmware
+    ######################################################
+    - name: 上传 Firmware
+      uses: actions/upload-artifact@v4
+      if: always()
+
+      with:
+        name: firmware
+
+        path: |
+          openwrt/bin/targets/
+
+    ######################################################
+    # 第十二步
+    # 上传 Packages
+    ######################################################
+    - name: 上传 Packages
+      uses: actions/upload-artifact@v4
+      if: always()
+
+      with:
+        name: packages
+
+        path: |
+          openwrt/bin/packages/
+
+    ######################################################
+    # 第十三步
+    # 查看最终空间
+    ######################################################
+    - name: 最终磁盘
+      if: always()
+      run: |
+
+        df -h

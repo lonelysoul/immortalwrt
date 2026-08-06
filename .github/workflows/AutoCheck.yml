@@ -1,7 +1,7 @@
 name: Auto Update Check
 env:
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: master
+  REPO_URL: https://github.com/openwrt/openwrt
+  REPO_BRANCH: main
 
 on:
   workflow_dispatch:

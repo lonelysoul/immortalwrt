@@ -86,32 +86,7 @@ jobs:
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
-
-    # 🧠 6. 加载 config
-    - name: Load config
-      run: |
-        set -e
-
-        CONFIG_PATH="$GITHUB_WORKSPACE/$CONFIG_FILE"
-
-        if [ ! -f "$CONFIG_PATH" ]; then
-          echo "❌ .config 不存在"
-          exit 1
-        fi
-
-        cp "$CONFIG_PATH" openwrt/.config
-        cd openwrt
-
         make defconfig
-
-        echo "===== 当前 Target ====="
-        grep CONFIG_TARGET .config | head
-
-        # ❗强制 x86
-        if ! grep -q "CONFIG_TARGET_x86=y" .config; then
-          echo "❌ 当前不是 x86 配置"
-          exit 1
-        fi
 
     # 📦 7. 下载依赖
     - name: Download packages

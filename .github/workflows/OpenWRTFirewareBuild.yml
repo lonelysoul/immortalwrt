@@ -32,7 +32,7 @@ jobs:
 
     # 🧾 1. 拉取仓库（含.config等DIY配置）
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # 🧰 2. 初始化环境
     - name: Init environment

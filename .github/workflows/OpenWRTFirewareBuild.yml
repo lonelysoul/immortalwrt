@@ -65,7 +65,7 @@ jobs:
 
     # 💾 4. 恢复/缓存 OpenWrt dl 依赖包
     - name: Cache dl
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: openwrt/dl
         key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('openwrt/include/target.mk', 'openwrt/Makefile') }}
@@ -74,7 +74,7 @@ jobs:
 
     # ⚡ 5. 恢复/缓存 ccache
     - name: Cache ccache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.ccache
         key: ${{ runner.os }}-openwrt-ccache-${{ github.sha }}

@@ -209,7 +209,7 @@ jobs:
     # 📢 18. Telegram 通知 (改为 OpenWrt Master x86)
     - name: Notify Telegram
       if: success()
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       with:
         script: |
           const token = process.env.TELEGRAM_BOT_TOKEN;

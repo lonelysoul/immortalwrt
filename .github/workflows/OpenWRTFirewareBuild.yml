@@ -49,7 +49,7 @@ jobs:
         libboost-system-dev libboost-filesystem-dev libpcre3-dev libv4l-dev \
         llvm python3-pyelftools libpython3-dev aria2 jq qemu-utils ccache rename \
         libelf-dev device-tree-compiler libgmp3-dev libmpc-dev libfuse-dev dwarves \
-        npm
+        npm sccache ccache
         sudo npm install -g pnpm
         sudo timedatectl set-timezone Asia/Shanghai
         sudo -E apt-get -qq autoremove --purge

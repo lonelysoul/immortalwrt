@@ -55,31 +55,80 @@ jobs:
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
 
-    # 📥 3. 克隆源码 (git clone --depth=1 --filter=blob:none)
+    # # 📥 3. 克隆源码 (git clone --depth=1 --filter=blob:none)
+    # - name: Clone source
+    #   run: |
+    #     mkdir -p compile
+    #     cd compile
+    #     git clone --depth=1 --filter=blob:none -b $REPO_BRANCH $REPO_URL openwrt
+    #     ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
+
+    # 📥 3. 克隆源码
     - name: Clone source
       run: |
         mkdir -p compile
         cd compile
         git clone --depth=1 --filter=blob:none -b $REPO_BRANCH $REPO_URL openwrt
         ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
+    
+        cd openwrt
+        echo "OPENWRT_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        echo "OpenWrt commit: $(git rev-parse HEAD)"
 
-    # 💾 4. 恢复/缓存 OpenWrt dl 依赖包
-    - name: Cache dl
-      uses: actions/cache@v6
+
+    # # 💾 4. 恢复/缓存 OpenWrt dl 依赖包
+    # - name: Cache dl
+    #   uses: actions/cache@v6
+    #   with:
+    #     path: openwrt/dl
+    #     key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('openwrt/include/target.mk', 'openwrt/Makefile') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-openwrt-dl-
+
+    # 💾 4. 恢复/缓存 OpenWrt 下载源码
+    # - name: Cache dl
+    #   uses: actions/cache@v6
+    #   with:
+    #     path: openwrt/dl
+    #     key: ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-${{ hashFiles('openwrt/include/target.mk', 'openwrt/Makefile') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-
+
+    # 💾 4. 恢复 OpenWrt 下载源码缓存
+    - name: Restore OpenWrt dl cache
+      id: cache-dl
+      uses: actions/cache/restore@v6
       with:
         path: openwrt/dl
-        key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('openwrt/include/target.mk', 'openwrt/Makefile') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-${{ github.ref_name }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-openwrt-dl-
+          ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-${{ github.ref_name }}-
+          ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-
 
-    # ⚡ 5. 恢复/缓存 ccache
-    - name: Cache ccache
-      uses: actions/cache@v6
+
+
+
+    # # ⚡ 5. 恢复/缓存 ccache
+    # - name: Cache ccache
+    #   uses: actions/cache@v6
+    #   with:
+    #     path: ~/.ccache
+    #     key: ${{ runner.os }}-openwrt-ccache-${{ github.sha }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-openwrt-ccache-
+
+    # ⚡ 5. 恢复 ccache
+    - name: Restore ccache
+      id: cache-ccache
+      uses: actions/cache/restore@v6
       with:
         path: ~/.ccache
-        key: ${{ runner.os }}-openwrt-ccache-${{ github.sha }}
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-ccache-${{ github.ref_name }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-openwrt-ccache-
+          ${{ runner.os }}-${{ runner.arch }}-openwrt-ccache-${{ github.ref_name }}-
+          ${{ runner.os }}-${{ runner.arch }}-openwrt-ccache-
+
+
 
     # 🔑 6. SSH 连接调试 (可选)
     - name: SSH连接到Actions
@@ -115,6 +164,20 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
         make defconfig
 
+    # 🧰 9.5. 恢复 OpenWrt Toolchain / Host Tools 缓存
+    - name: Restore OpenWrt toolchain cache
+      id: cache-toolchain
+      uses: actions/cache/restore@v6
+      with:
+        path: |
+          openwrt/staging_dir/host
+          openwrt/staging_dir/hostpkg
+          openwrt/staging_dir/toolchain-*
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
+
+
+
+
     # 📦 10. 下载依赖包 (多线程 -j8 + 自动清除零字节损坏包)
     - name: Download packages
       run: |
@@ -143,6 +206,37 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         echo "===== ccache 编译统计 ====="
         ccache -s
+
+    # 💾 保存 OpenWrt Toolchain / Host Tools 缓存
+    - name: Save OpenWrt toolchain cache
+      if: success() && steps.cache-toolchain.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: |
+          openwrt/staging_dir/host
+          openwrt/staging_dir/hostpkg
+          openwrt/staging_dir/toolchain-*
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
+        # 💾 保存 OpenWrt dl 缓存
+        
+    - name: Save OpenWrt dl cache
+      if: success()
+      uses: actions/cache/save@v6
+      with:
+        path: openwrt/dl
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-dl-${{ github.ref_name }}-${{ github.run_id }}
+
+
+
+    # 💾 保存 ccache
+    - name: Save ccache
+      if: success()
+      uses: actions/cache/save@v6
+      with:
+        path: ~/.ccache
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-ccache-${{ github.ref_name }}-${{ github.run_id }}
+    
+
 
     # 📂 12. 检查固件输出
     - name: Check firmware

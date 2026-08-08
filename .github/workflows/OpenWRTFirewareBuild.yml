@@ -55,16 +55,8 @@ jobs:
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
 
-    # # 📥 3. 克隆源码 (git clone --depth=1 --filter=blob:none)
-    # - name: Clone source
-    #   run: |
-    #     mkdir -p compile
-    #     cd compile
-    #     git clone --depth=1 --filter=blob:none -b $REPO_BRANCH $REPO_URL openwrt
-    #     ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
-
-    # 📥 3. 克隆源码
     - name: Clone source
+      id: clone-source
       run: |
         mkdir -p compile
         cd compile
@@ -72,9 +64,10 @@ jobs:
         ln -sf $GITHUB_WORKSPACE/compile/openwrt $GITHUB_WORKSPACE/openwrt
     
         cd openwrt
-        echo "OPENWRT_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
-        echo "OpenWrt commit: $(git rev-parse HEAD)"
-
+        OPENWRT_COMMIT=$(git rev-parse HEAD)
+        echo "OpenWrt commit: $OPENWRT_COMMIT"
+        echo "commit=$OPENWRT_COMMIT" >> "$GITHUB_OUTPUT"
+    
 
     # # 💾 4. 恢复/缓存 OpenWrt dl 依赖包
     # - name: Cache dl
@@ -164,6 +157,17 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
         make defconfig
 
+    # # 🧰 9.5. 恢复 OpenWrt Toolchain / Host Tools 缓存
+    # - name: Restore OpenWrt toolchain cache
+    #   id: cache-toolchain
+    #   uses: actions/cache/restore@v6
+    #   with:
+    #     path: |
+    #       openwrt/staging_dir/host
+    #       openwrt/staging_dir/hostpkg
+    #       openwrt/staging_dir/toolchain-*
+    #     key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
+
     # 🧰 9.5. 恢复 OpenWrt Toolchain / Host Tools 缓存
     - name: Restore OpenWrt toolchain cache
       id: cache-toolchain
@@ -173,8 +177,7 @@ jobs:
           openwrt/staging_dir/host
           openwrt/staging_dir/hostpkg
           openwrt/staging_dir/toolchain-*
-        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
-
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ steps.clone-source.outputs.commit }}-${{ hashFiles('openwrt/.config') }}
 
 
 
@@ -207,6 +210,17 @@ jobs:
         echo "===== ccache 编译统计 ====="
         ccache -s
 
+    # # 💾 保存 OpenWrt Toolchain / Host Tools 缓存
+    # - name: Save OpenWrt toolchain cache
+    #   if: success() && steps.cache-toolchain.outputs.cache-hit != 'true'
+    #   uses: actions/cache/save@v6
+    #   with:
+    #     path: |
+    #       openwrt/staging_dir/host
+    #       openwrt/staging_dir/hostpkg
+    #       openwrt/staging_dir/toolchain-*
+    #     key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
+
     # 💾 保存 OpenWrt Toolchain / Host Tools 缓存
     - name: Save OpenWrt toolchain cache
       if: success() && steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -216,9 +230,12 @@ jobs:
           openwrt/staging_dir/host
           openwrt/staging_dir/hostpkg
           openwrt/staging_dir/toolchain-*
-        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ env.OPENWRT_COMMIT }}-${{ hashFiles('openwrt/.config') }}
-        # 💾 保存 OpenWrt dl 缓存
-        
+        key: ${{ runner.os }}-${{ runner.arch }}-openwrt-toolchain-${{ steps.clone-source.outputs.commit }}-${{ hashFiles('openwrt/.config') }}
+    
+
+
+
+    # 💾 保存 OpenWrt dl 缓存
     - name: Save OpenWrt dl cache
       if: success()
       uses: actions/cache/save@v6
